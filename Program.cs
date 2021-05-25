@@ -271,7 +271,7 @@ namespace BirdManager
             // Create a client for your app
             // Move to Settings now
             // 
-            var appClient = new TwitterClient("HC7WLgi4f8VAnqJ6N0n5guMaN", "YCY28tB1k2ZMcchFYUDhq5aZSFlweuGpmEmEEZI0jmpID9x7RA");
+            var appClient = new TwitterClient("ZzE4pjN3bE2Wm4IITfYKtM6sg", "sluMyQzNrD7Lj6ZMm392UxDG8tgpPaVS01uYXRfEWchRYGyGhr");
 
             // Start the authentication process
             var authenticationRequest = await appClient.Auth.RequestAuthenticationUrlAsync();
