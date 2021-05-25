@@ -1,0 +1,1106 @@
+﻿using BirdManager.Models;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Net.Sockets;
+using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
+using Tweetinvi;
+using Tweetinvi.AspNet;
+using Tweetinvi.Exceptions;
+using Tweetinvi.Models;
+using Tweetinvi.Streaming;
+using Tweetinvi.Streaming.Parameters;
+
+namespace BirdManager
+{
+    class Program
+    {
+
+        static int indexMainMenu = 0;
+        static TwitterClient _userClient;
+        static ITwitterList[] _userLists;
+        static long[] _friendIds;
+        static int _membersAddedCount;
+        static string _tweetsArchive;
+        static IFilteredStream _stream;
+
+        public Program(TwitterClient userclient, ITwitterList[] userLists, long[] friendIds, int membersAddedCount, 
+            string tweetsArchive, IFilteredStream stream)
+        {
+            _userClient = userclient;
+            _userLists = userLists;
+            _friendIds = friendIds;
+            _membersAddedCount = membersAddedCount;
+            _tweetsArchive = tweetsArchive;
+            _stream = stream;
+        }
+
+        static async Task Main(string[] args)
+        {
+            Console.Clear();
+            Console.OutputEncoding = System.Text.Encoding.Unicode;
+
+            Plugins.Add<AspNetPlugin>();
+
+            await CreateDirectory();
+
+            try
+            {
+                // Authenticate Twitter
+                await AuthTwitter();
+
+                Console.Clear();
+
+                var user = await _userClient.Users.GetAuthenticatedUserAsync();
+
+                // Draw Menu
+                List<string> menuItems = new List<string>()
+                {
+                    "┈----------------------Lists",
+                    "┈GetUserLists",
+                    "┈CopyUserList",
+                    "┈AddIdsToList",
+                    "┈DeleteIdFromList",
+                    "┈----------------------Users",
+                    "┈GetUsersFriendIds",
+                    "┈BlockIds",
+                    "┈---------------------Tweets",
+                    "┈CreateTweetDatabase",
+                    "┈DeleteTweets",
+                    "┈--------------------Account",
+                    "┈DeleteTimeline",
+                    "┈UnFollowAll",
+                    "┈UnfavTweets",
+                    "┈--------------------Streams",
+                    "┈StartFilteredKeyWordsStream",
+                    "┈ScanWhaleTradesForShortCode",
+                    "┈Exit"
+                };
+
+                Console.CursorVisible = false;
+                while (true)
+                {
+                    Console.WriteLine("┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈");
+                    Console.WriteLine("┈BirdManager 0.0.5                         ");
+                    Console.WriteLine("┈Logged in as: " + user.ScreenName);
+                    Console.WriteLine("┈Followers count " + user.FollowersCount);
+                    Console.WriteLine("┈Friends count " + user.FriendsCount);
+                    Console.WriteLine("┈Favourites count " + user.FavoritesCount);
+                    Console.WriteLine("┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈\n");
+
+                    Console.WriteLine("┈Menu:");
+                    string selectedMenuItem = DrawMainMenu(menuItems);
+                    if (selectedMenuItem == "┈GetUserLists")
+                    {
+                        Console.WriteLine("From which username you want to grab all lists?");
+                        var screenName = Console.ReadLine();
+                        Parallel.Invoke(async () => await GetUsersLists(screenName));
+                    }
+                    else if (selectedMenuItem == "┈CopyUserList")
+                    {
+                        Console.WriteLine("Which lists you want to copy to your account?");
+                        var count = 0;
+
+                        foreach (var list in _userLists)
+                        {
+                            Console.WriteLine("{0} {1} ", count, list.Name);
+                            count++;
+                        }
+
+                        var listNumber = Console.ReadLine();
+
+                        Parallel.Invoke(async () => await CopyUsersList(_userLists[Convert.ToInt32(listNumber)]));
+                    }
+                    else if (selectedMenuItem == "┈GetUsersFriendIds")
+                    {
+                        Console.WriteLine("From which username you want to grab all friends?");
+                        var screenName = Console.ReadLine();
+                        Parallel.Invoke(async () => await GetusersFriends(screenName));
+                    }
+                    else if (selectedMenuItem == "┈AddIdsToList")
+                    {
+                        Parallel.Invoke(async () => await AddIdsToList());
+                    }
+                    else if (selectedMenuItem == "┈DeleteIdFromList")
+                    {
+                        Console.WriteLine("Which Id do you want to delete from the list?");
+                        var userId = Console.ReadLine();
+
+
+                        Parallel.Invoke(async () => await DeleteIdFromList(userId));
+                    }
+                    else if (selectedMenuItem == "┈BlockIds")
+                    {
+                        // Block Users
+                    }
+                    else if (selectedMenuItem == "┈CreateTweetDatabase")
+                    {
+                        Parallel.Invoke(async () => await CreateTweetDatabase());
+                    }
+                    else if (selectedMenuItem == "┈DeleteTweets")
+                    {
+                        Parallel.Invoke(async () => await DeleteTweets());
+                    }
+                    else if (selectedMenuItem == "┈UnfavTweets")
+                    {
+                        Parallel.Invoke(async () => await UnfavTweets());
+                    }
+                    else if (selectedMenuItem == "┈UnFollowAll")
+                    {
+                        Parallel.Invoke(async () => await UnFollowAll());
+                    }
+                    else if (selectedMenuItem == "┈DeleteTimeline")
+                    {
+                        Parallel.Invoke(async () => await DeleteTimeline());
+                    }
+                    else if (selectedMenuItem == "┈StartFilteredKeyWordsStream")
+                    {
+                        Console.WriteLine("Please enter the keyword you want to stream...");
+
+                        var keyword = Console.ReadLine();
+
+                        Console.Clear();
+
+                        // Start filtered stream as parallel
+                        Parallel.Invoke(async () => await StartFilteredStream(keyword));
+                    }
+
+                    else if (selectedMenuItem == "┈ScanWhaleTradesForShortCode")
+                    {
+                         Console.WriteLine("Please enter the asset shortcode ...");
+
+                        var assetShortCode = Console.ReadLine();
+                        Console.Clear();
+
+                        // Start filtered stream as parallel
+                        Parallel.Invoke(async () => await ScanWhaleTrades(assetShortCode));
+                    }
+                    else if (selectedMenuItem == "┈Exit")
+                    {
+                        Environment.Exit(0);
+                    }
+                }
+            }
+            catch (TwitterAuthException ex)
+            {
+                Console.WriteLine("TwitterAuthException was thrown: " + ex);
+            }
+        }
+
+
+        static string DrawMainMenu(List<string> items)
+        {
+            for (int i = 0; i < items.Count; i++)
+            {
+                if (i == indexMainMenu)
+                {
+                    Console.BackgroundColor = ConsoleColor.Gray;
+                    Console.ForegroundColor = ConsoleColor.Black;
+                    Console.WriteLine(items[i]);
+                }
+                else
+                {
+                    Console.WriteLine(items[i]);
+                }
+                Console.ResetColor();
+            }
+
+            ConsoleKeyInfo ckey = Console.ReadKey();
+            if (ckey.Key == ConsoleKey.DownArrow)
+            {
+                if (indexMainMenu == items.Count - 1) { }
+                else { indexMainMenu++; }
+            }
+            else if (ckey.Key == ConsoleKey.UpArrow)
+            {
+                if (indexMainMenu <= 0) { }
+                else { indexMainMenu--; }
+            }
+            else if (ckey.Key == ConsoleKey.LeftArrow)
+            {
+                Console.Clear();
+            }
+            else if (ckey.Key == ConsoleKey.RightArrow)
+            {
+                Console.Clear();
+            }
+            else if (ckey.Key == ConsoleKey.Enter)
+            {
+                return items[indexMainMenu];
+            }
+            else
+            {
+                return "";
+            }
+
+            Console.Clear();
+            return "";
+        }
+        static async Task CreateDirectory()
+        {
+            string path = "Data";
+
+            try
+            {
+                // Determine whether the directory exists.
+                if (Directory.Exists(path))
+                {
+                    Console.WriteLine("That path exists already.");
+                    return;
+                }
+
+                // Try to create the directory.
+                DirectoryInfo di = Directory.CreateDirectory(path);
+                Console.WriteLine("The directory was created successfully at {0}.", Directory.GetCreationTime(path));
+
+                await Task.Delay(1);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("The process failed: {0}", e.ToString());
+            }
+            finally { }
+        }
+        static async Task AuthTwitter()
+        {
+
+            // Create a client for your app
+            // Move to Settings now
+            // 
+            var appClient = new TwitterClient("HC7WLgi4f8VAnqJ6N0n5guMaN", "YCY28tB1k2ZMcchFYUDhq5aZSFlweuGpmEmEEZI0jmpID9x7RA");
+
+            // Start the authentication process
+            var authenticationRequest = await appClient.Auth.RequestAuthenticationUrlAsync();
+
+            // Go to the URL so that Twitter authenticates the user and gives him a PIN code.
+            Process.Start(new ProcessStartInfo(authenticationRequest.AuthorizationURL)
+            {
+                UseShellExecute = true
+            });
+
+            // Ask the user to enter the pin code given by Twitter
+            Console.WriteLine("Please enter the code and press enter.");
+            var pinCode = Console.ReadLine();
+
+            // With this pin code it is now possible to get the credentials back from Twitter
+            var userCredentials = await appClient.Auth.RequestCredentialsFromVerifierCodeAsync(pinCode, authenticationRequest);
+
+            // You can now save those credentials or use them as followed
+            var userClient = new TwitterClient(userCredentials);
+            var user = await userClient.Users.GetAuthenticatedUserAsync();
+
+            Console.WriteLine("Congratulation you have authenticated the user: " + user);
+
+            _userClient = userClient;
+
+        }
+        static async Task GetUsersLists(string screenName)
+        {
+
+            var userId = _userClient.Users.GetUserAsync(screenName);
+
+            var userLists = await _userClient.Lists.GetListsOwnedByUserAsync(userId.Result.Id);
+
+            _userLists = userLists;
+
+            foreach(var list in userLists)
+            {
+                Console.WriteLine(list.Name);
+            }
+
+
+        }
+        static async Task CopyUsersList(ITwitterList list)
+        {
+            // Make Folder for Id Databases
+
+            var getListMembers = await _userClient.Lists.GetMembersOfListAsync(list.Id);
+
+            var listName = list.Id;
+
+            // Check if tweetids.txt is already existing
+            if (File.Exists("Data/" + listName.ToString() + ".txt"))
+                {
+                    Console.WriteLine(">>> Skipping database creation because file already exists");
+                }
+                else
+                {
+                    // else gett all tweetids and store them in
+
+                    using (StreamWriter writer = new StreamWriter("Data/" + listName.ToString() + ".txt"))
+                    {
+                        foreach (var member in getListMembers)
+                        {
+                            Console.WriteLine(">>> Writing " + member.Id );
+                            writer.WriteLine(member.Id);
+                        }
+                    }
+
+                    await Task.Delay(500);
+                }
+        }
+        static async Task GetusersFriends(string screenName)
+        {
+            var userId = _userClient.Users.GetUserAsync(screenName);
+
+            var friendIds = await _userClient.Users.GetFriendIdsAsync(userId.Result.Id);
+
+            _friendIds = friendIds;
+
+            if (File.Exists("Data/" + screenName.ToString() + ".txt"))
+            {
+                Console.WriteLine(">>> Skipping friends database creation because file already exists");
+            }
+            else
+            {
+                // else gett all tweetids and store them in
+
+                using (StreamWriter writer = new StreamWriter($"Data/"+screenName.ToString() + ".txt"))
+                {
+                    foreach (var member in friendIds)
+                    {
+                        Thread.Sleep(TimeSpan.FromSeconds(1));
+                        Console.WriteLine(">>> Writing " + member);
+                        writer.WriteLine(member);
+                    }
+                }
+
+                Console.WriteLine(">>> Succesfully created friendId database of user: " + screenName);
+
+                await Task.Delay(500);
+            }
+        }
+        // Reuse and make a switch 
+        static async Task AddIdsToList()
+        {
+
+            // Ask user which database to import
+            // To which list
+
+            var sourceDir = @"Data\";
+
+            Console.WriteLine("Which Id database do you want to import, \n" +
+                "please type the filename (without .txt) and hit ENTER.\n ");
+
+            var fileName = Console.ReadLine();
+
+            var memberIds = File.ReadAllLines(sourceDir + fileName +".txt");
+
+            if (File.Exists(sourceDir + fileName + "_backup.txt"))
+            {
+                Console.WriteLine(">>> Skipping backup creation because file already exists...");
+            }
+            else
+            {
+                Console.WriteLine(">>> Creating backup in data folder...");
+                File.Copy(Path.Combine(sourceDir, fileName + ".txt"), Path.Combine(sourceDir, fileName + "_backup.txt"));
+            }
+
+            // Random interval for Sleep Thread
+            var rand = new Random();
+
+            foreach (string member in memberIds)
+            {
+                // Make today Database entry
+                Console.WriteLine("Added Members today: " + _membersAddedCount );
+                if (_membersAddedCount >= 850)
+                {
+                    Console.WriteLine("You will hit account limits for adding new members soon. Wait for 12 hours. \n#" +
+                        "Hit Enter to continue...");
+                    Console.ReadKey();
+                }
+                else
+                {
+                    try
+                    {
+                        await Task.Delay(TimeSpan.FromSeconds(rand.Next(5, 10)));
+                        Console.WriteLine("Adding {0} to the list ", member);
+                        await _userClient.Lists.AddMemberToListAsync(1391027714665197574, Convert.ToInt64(member));
+
+                        memberIds = File.ReadAllLines(sourceDir + fileName + ".txt").Skip(1).ToArray();
+                        File.WriteAllLines(sourceDir + fileName + ".txt", memberIds);
+                    }
+                    catch (TwitterException ex)
+                    {
+                        Console.WriteLine("TwitterException: " + ex);
+
+                        memberIds = File.ReadAllLines(sourceDir + fileName + ".txt").Skip(1).ToArray();
+                        File.WriteAllLines(sourceDir + fileName + ".txt", memberIds);
+
+                    }
+                    _membersAddedCount++;
+                }
+
+            }
+
+            await Task.Delay(5000);
+        }
+        static async Task DeleteIdFromList(string Id)
+        {
+            Console.WriteLine("Trying to delete the Id");
+            await _userClient.Lists.RemoveMemberFromListAsync(1391027714665197574, Convert.ToInt64(Id));
+            Console.WriteLine("Deleted...");
+        }
+        static async Task StartFilteredStream(string keyword)
+        {
+            try
+            {
+                TweetinviEvents.BeforeExecutingRequest += (sender, args) =>
+                {
+                    // lets delay all operations from this client by 2 seconds
+                    Task.Delay(TimeSpan.FromSeconds(5));
+                };
+
+                // Waiting for rate limits
+                TweetinviEvents.WaitingForRateLimit += (sender, args) =>
+                {
+                    Console.WriteLine($"\n Waiting for rate limits... ");
+                    Task.Delay(TimeSpan.FromHours(3));
+                };
+
+                // subscribe to application level events
+                TweetinviEvents.BeforeExecutingRequest += (sender, args) =>
+                {
+                    // application level logging
+                    Console.WriteLine($"\n >>> Event: " + args.Url + "\n");
+                };
+
+                // For a client to be included in the application events you will need to subscribe to this client's events
+                TweetinviEvents.SubscribeToClientEvents(_userClient);
+
+                // Start Stream
+                var stream = _userClient.Streams.CreateFilteredStream();
+
+                // Add keyword
+                stream.AddTrack(keyword);
+
+                // Only match the addfollows
+                stream.MatchOn = MatchOn.TweetText;
+
+                // Get notfified about shutdown of the stream
+                stream.StallWarnings = true;
+
+                // Filterlevel of sensitive tweets
+                stream.FilterLevel = StreamFilterLevel.Low;
+
+                stream.KeepAliveReceived += async (sender, args) =>
+                {
+                    var streamstate = stream.StreamState;
+                    Console.WriteLine(streamstate.ToString());
+                    await Task.Delay(1);
+                };
+
+                stream.LimitReached += async (sender, eventReceived) =>
+                {
+                    Console.WriteLine("===========> Stream Warning... " + eventReceived.NumberOfTweetsNotReceived);
+
+                    await Task.Delay(1);
+                };
+
+                stream.WarningFallingBehindDetected += async (sender, args) =>
+                {
+                    Console.WriteLine($">_ Warning falling behind...");
+                    await Task.Delay(1000).ConfigureAwait(true);
+                };
+
+                stream.UnmanagedEventReceived += async (sender, args) =>
+                {
+                    Console.WriteLine($">_ Unmanged Event...");
+                    await Task.Delay(1000).ConfigureAwait(true);
+                };
+
+                stream.LimitReached += async (sender, args) =>
+                {
+                    Console.WriteLine($">_ Limit reached...");
+                    await Task.Delay(1000).ConfigureAwait(true);
+                };
+
+                stream.DisconnectMessageReceived += async (sender, args) =>
+                {
+                    Console.WriteLine($">_ Stream disconnected...");
+                    stream.Stop();
+                    Task.Delay(20000).Wait();
+                    await stream.StartMatchingAllConditionsAsync().ConfigureAwait(true);
+
+                };
+
+                stream.NonMatchingTweetReceived += async (sender, args) =>
+                {
+                    var tweet = args.Tweet;
+
+                    Console.WriteLine($"\n >>> Non matching tweet received... " + "" + tweet.Id);
+
+                    await Task.Delay(TimeSpan.FromMinutes(1));
+
+                };
+
+                stream.MatchingTweetReceived += async (sender, args) =>
+                {
+
+                    //var tweet = args.Tweet;
+                    //var hashTagCount = tweet.Entities.Hashtags.Count;
+
+                    //if (tweet.IsRetweet == true)
+                    //{
+                    //    Console.WriteLine($"\n >>> is retweet... " + "" + tweet.Id);
+                    //}
+                    //else if (hashTagCount > 3)
+                    //{
+                    //    Console.WriteLine($"\n >>> banned for hashtagcount... " + "" + tweet.Id);
+                    //}
+                    //else
+                    //{
+                    //    Console.WriteLine("Open Tweet with ID " + tweet.Id + " in Browser...");
+
+                    //    Process.Start(new ProcessStartInfo(tweet.Url)
+                    //    {
+                    //        UseShellExecute = true
+                    //    });
+                    //}
+
+                    //await Task.Delay(5);
+
+
+                    var tweet = args.Tweet;
+                    var hashTagCount = tweet.Entities.Hashtags.Count;
+
+                    if (args.MatchOn == stream.MatchOn)
+                    {
+                        if (tweet.IsRetweet == true)
+                        {
+                            Console.WriteLine($"\n >>> is retweet... " + "" + tweet.Id);
+                        }
+                        else if (hashTagCount > 3)
+                        {
+                            Console.WriteLine($"\n >>> banned for hashtagcount... " + "" + tweet.Id);
+                        }
+                        else if (tweet.Media.Count >= 1)
+                        {
+                            Console.WriteLine("Like and retweet tweet ID " + tweet.Id);
+
+                            await _userClient.Tweets.FavoriteTweetAsync(tweet);
+                            await _userClient.Tweets.PublishTweetAsync("The dragon will fly again #Bitcoin " + tweet.Url);
+                        }
+                    }
+
+                    await Task.Delay(TimeSpan.FromSeconds(60));
+
+                };
+                await stream.StartMatchingAllConditionsAsync();
+            }
+            catch (TwitterException ex)
+            {
+                Console.WriteLine("TwitetrException: " + ex);
+            }
+            catch (SocketException ex)
+            {
+                Console.WriteLine($"\n>>> Socket Exception... " + ex);
+            }
+            catch (EndOfStreamException ex)
+            {
+                Console.WriteLine($"\n>>> Unexpected end of stream..." + ex);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"<_ " + ex);
+            }
+        }
+
+
+
+        static async Task CreateTweetDatabase()
+        {
+            // Check if tweetids.txt is already existing
+            if (File.Exists("Data/tweetids.txt"))
+            {
+                Console.WriteLine(">>> Skipping database creation because file already exists");
+            }
+            else
+            {
+                // else gett all tweetids and store them in
+
+                // Getting all tweets from tweet.js
+                Console.WriteLine(">>> Getting Tweets from tweet.js now");
+
+                _tweetsArchive = File.ReadAllText("Data/tweet.js");
+                var TweetArchive = JsonSerializer.Deserialize<List<Tweets>>(_tweetsArchive);
+
+                using (StreamWriter writer = new StreamWriter("Data/tweetids.txt"))
+                {
+                    foreach (var tweets in TweetArchive)
+                    {
+                        Console.WriteLine(">>> Writing " + tweets.tweet.id + " to tweetids.txt");
+                        writer.WriteLine(tweets.tweet.id);
+                    }
+                }
+
+                await Task.Delay(500);
+            }
+        }
+        static async Task DeleteTweets()
+        {
+
+            //if file not existing get the last tweets from the timeline...
+
+            var orderTweets = File.ReadAllLines("Data/tweetids.txt");
+
+            foreach (string tweetid in orderTweets)
+            {
+                try
+                {
+                    Console.WriteLine("\n >>> Deleting Tweet with Id: " + tweetid);
+
+                    
+                    var tweet = _userClient.Tweets.GetTweetAsync(Convert.ToInt64(tweetid));
+
+                    if (tweet.Result.IsRetweet)
+                    {
+                        Console.WriteLine("Tweet is a retweet");
+                        // Destroying retweet
+                        Console.WriteLine(">>> trying to destroy retweet");
+                        await _userClient.Tweets.DestroyRetweetAsync(Convert.ToInt64(tweetid));
+                        Console.WriteLine(">>> Success... ");
+                    }
+                    else
+                    {
+                        // Destroying Tweet
+                        Console.WriteLine(">>> trying to destroy Tweet");
+                        await _userClient.Tweets.DestroyTweetAsync(Convert.ToInt64(tweetid));
+                        Console.WriteLine(">>> Success... ");
+                    }
+                    // Updating tweet database
+                    Console.WriteLine(">>> Updating the tweet database... ");
+                    orderTweets = File.ReadAllLines("Data/tweetids.txt").Skip(1).ToArray();
+                    File.WriteAllLines("Data/tweetids.txt", orderTweets);
+
+                    // Wait for N seconds for rate limits
+                    Console.WriteLine(">>> Waiting for 15 seconds for rate limits");
+                    await Task.Delay(TimeSpan.FromSeconds(15));
+                }
+                catch(TwitterException ex)
+                {
+                    Console.WriteLine("TwitetrException " + ex);
+                }
+                catch(ArgumentNullException ex)
+                {
+                    Console.WriteLine("ArgumentNullException " + ex);
+                }
+                catch(Exception ex)
+                {
+                    Console.WriteLine("Exception " + ex);
+
+                }
+
+            }
+
+        }
+        static async Task UnfavTweets()
+        {
+            var user = _userClient.Users.GetAuthenticatedUserAsync().Result;
+            var favedTweets = await _userClient.Tweets.GetUserFavoriteTweetsAsync(user.Id);
+
+            foreach(var tweet in favedTweets)
+            {
+                Console.WriteLine("Unfaving Tweet: " + tweet.Id);
+                await _userClient.Tweets.UnfavoriteTweetAsync(tweet);
+
+                await Task.Delay(TimeSpan.FromSeconds(15));
+            }
+
+            await Task.Delay(100);
+        }
+        static async Task UnFollowAll()
+        {
+            
+            // Get authenticated user => Move to global 
+            var authenticatedUser = await _userClient.Users.GetAuthenticatedUserAsync();
+
+            // Get all friend ids
+            var friendsDatabase = _userClient.Users.GetFriendsAsync(authenticatedUser.ScreenName);
+
+            foreach (var friend in friendsDatabase.Result)
+            {
+                Console.WriteLine(">>> Unfollow friend with the Id " + friend.Id);
+                await _userClient.Users.UnfollowUserAsync(friend.Id);
+
+                await Task.Delay(TimeSpan.FromSeconds(10));
+            }
+
+            Console.WriteLine("\n>>> Unfollowed all fetched friend Ids");
+        }
+        static async Task DeleteTimeline()
+        {
+            var user = await _userClient.Users.GetAuthenticatedUserAsync();
+
+            var timeline = await _userClient.Timelines.GetHomeTimelineAsync();
+
+
+            foreach(var tweet in timeline)
+            {
+
+                if (!tweet.IsRetweet)
+                {
+                    Console.WriteLine("Deleteing Tweet" + tweet.Id);
+                    await _userClient.Tweets.DestroyTweetAsync(tweet.Id);
+                }
+                else
+                {
+                    Console.WriteLine("Deleteing Retweet" + tweet.Id);
+                    await _userClient.Tweets.DestroyRetweetAsync(tweet.Id);
+                }
+
+            }
+
+        }
+
+
+        static async Task ScanWhaleTrades(string assetShortCode)
+        {
+            try
+            {
+                TweetinviEvents.BeforeExecutingRequest += (sender, args) =>
+                {
+                    // lets delay all operations from this client by 2 seconds
+                    Task.Delay(TimeSpan.FromSeconds(5));
+                };
+
+                // Waiting for rate limits
+                TweetinviEvents.WaitingForRateLimit += (sender, args) =>
+                {
+                    Console.WriteLine($"\n Waiting for rate limits... ");
+                    Task.Delay(TimeSpan.FromHours(3));
+                };
+
+                // subscribe to application level events
+                TweetinviEvents.BeforeExecutingRequest += (sender, args) =>
+                {
+                    // application level logging
+                    Console.WriteLine($"\n >>> Event: " + args.Url + "\n");
+                };
+
+                // For a client to be included in the application events you will need to subscribe to this client's events
+                TweetinviEvents.SubscribeToClientEvents(_userClient);
+
+                // Create the stream for the user
+                var stream = _userClient.Streams.CreateFilteredStream();
+
+                stream.StreamStarted += async (sender, args) =>
+                {
+                    Console.WriteLine($">_ Stream started...");
+                    await Task.CompletedTask.ConfigureAwait(true);
+                };
+
+                stream.StreamResumed += async (sender, args) =>
+                {
+                    Console.WriteLine($">_ Stream resumed...");
+                    await Task.CompletedTask.ConfigureAwait(true);
+                };
+
+                stream.StreamStopped += async (sender, args) =>
+                {
+                    var exceptionThatCausedTheStreamToStop = args.Exception;
+                    var twitterDisconnectMessage = args.DisconnectMessage;
+
+                    Console.WriteLine(">_ Stream stopped... ");
+                    Console.WriteLine(">_ {0} ", twitterDisconnectMessage);
+
+                    Task.Delay(20000).Wait();
+
+                    await stream.StartMatchingAllConditionsAsync().ConfigureAwait(true);
+                };
+
+                // Adding the WhaleWatchers
+                // whale_alert WhaleTrades WhaleCallsAlts Whale_Sniper
+                var WhaleTrades = _userClient.Users.GetUserAsync("WhaleTrades").Result;
+                var whale_alert = _userClient.Users.GetUserAsync("whale_alert").Result;
+                var WhaleCallsAlts = _userClient.Users.GetUserAsync("WhaleCallsAlts").Result;
+                var Whale_Sniper = _userClient.Users.GetUserAsync("Whale_Sniper").Result;
+                var Whalecalls = _userClient.Users.GetUserAsync("whalecalls").Result;
+
+                // Add Follows for the accounts
+                stream.AddFollow(WhaleTrades.Id);
+                stream.AddFollow(whale_alert.Id);
+                stream.AddFollow(WhaleCallsAlts.Id);
+                stream.AddFollow(Whale_Sniper.Id);
+                stream.AddFollow(Whalecalls.Id);
+
+                // Add shortcode Track
+                stream.AddTrack(assetShortCode);
+
+                stream.MatchOn = MatchOn.TweetText;
+
+
+                // Get notfified about shutdown of the stream
+                stream.StallWarnings = true;
+
+                // Get notfified about shutdown of the stream
+                stream.StallWarnings = true;
+
+                // Filterlevel of sensitive tweets
+                stream.FilterLevel = StreamFilterLevel.Low;
+
+                stream.KeepAliveReceived += async (sender, args) =>
+                {
+                    var streamstate = stream.StreamState;
+                    Console.WriteLine(streamstate.ToString());
+                    await Task.Delay(1);
+                };
+
+                stream.LimitReached += async (sender, eventReceived) =>
+                {
+                    Console.WriteLine("===========> Stream Warning... " + eventReceived.NumberOfTweetsNotReceived);
+
+                    await Task.Delay(1);
+                };
+
+                stream.WarningFallingBehindDetected += async (sender, args) =>
+                {
+                    Console.WriteLine($">_ Warning falling behind...");
+                    await Task.Delay(1000).ConfigureAwait(true);
+                };
+
+                stream.UnmanagedEventReceived += async (sender, args) =>
+                {
+                    Console.WriteLine($">_ Unmanged Event...");
+                    await Task.Delay(1000).ConfigureAwait(true);
+                };
+
+                stream.LimitReached += async (sender, args) =>
+                {
+                    Console.WriteLine($">_ Limit reached...");
+                    await Task.Delay(1000).ConfigureAwait(true);
+                };
+
+                stream.DisconnectMessageReceived += async (sender, args) =>
+                {
+                    Console.WriteLine($">_ Stream disconnected...");
+                    stream.Stop();
+                    Task.Delay(20000).Wait();
+                    await stream.StartMatchingAllConditionsAsync().ConfigureAwait(true);
+
+                };
+
+                stream.NonMatchingTweetReceived += async (sender, args) =>
+                {
+                    var tweet = args.Tweet;
+
+                    Console.WriteLine($"\n >>> Non matching tweet received... " + "" + tweet.Id);
+
+                    await Task.Delay(TimeSpan.FromMinutes(1));
+
+                };
+
+                stream.MatchingTweetReceived += async (sender, eventReceived) =>
+                {
+                    var tweet = eventReceived.Tweet;
+
+                    Console.WriteLine(eventReceived.Tweet);
+
+                    await _userClient.Tweets.PublishRetweetAsync(tweet);
+
+                };
+                await stream.StartMatchingAllConditionsAsync();
+            }
+            catch (TwitterException ex)
+            {
+                Console.WriteLine("TwitetrException: " + ex);
+            }
+            catch (SocketException ex)
+            {
+                Console.WriteLine($"\n>>> Socket Exception... " + ex);
+            }
+            catch (EndOfStreamException ex)
+            {
+                Console.WriteLine($"\n>>> Unexpected end of stream..." + ex);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"<_ " + ex);
+            }
+
+
+
+            await Task.Delay(5);
+        }
+
+
+        //Needs Rework
+        //Neeeds Banlist
+        //Needs other Filtertypes
+        static async Task StartListStream()
+        {
+            var sourceDir = @"Data\";
+
+            Console.WriteLine("Which Id database do you want to import, \n" +
+                "please type the filename (without .txt) and hit ENTER.\n ");
+
+            var fileName = Console.ReadLine();
+
+            var memberIds = File.ReadAllLines(sourceDir + fileName + ".txt");
+
+            try
+            {
+                TweetinviEvents.BeforeExecutingRequest += (sender, args) =>
+                {
+                    // lets delay all operations from this client by 2 seconds
+                    Task.Delay(TimeSpan.FromSeconds(5));
+                };
+
+                // Waiting for rate limits
+                TweetinviEvents.WaitingForRateLimit += (sender, args) =>
+                {
+                    Console.WriteLine($"\n Waiting for rate limits... ");
+                    Task.Delay(TimeSpan.FromHours(3));
+                };
+
+                // subscribe to application level events
+                TweetinviEvents.BeforeExecutingRequest += (sender, args) =>
+                {
+                    // application level logging
+                    Console.WriteLine($"\n >>> Event: " + args.Url + "\n");
+                };
+
+                // For a client to be included in the application events you will need to subscribe to this client's events
+                TweetinviEvents.SubscribeToClientEvents(_userClient);
+
+                // Make Stream
+                var stream = _userClient.Streams.CreateFilteredStream();
+
+                var count = 0;
+                foreach (var item in memberIds)
+                {
+                    if (count <= 1000)
+                    {
+                        stream.AddFollow(Convert.ToInt64(item));
+                        count++;
+                    }
+                    else
+                        break;
+                }
+
+                // Only match the addfollows
+                stream.MatchOn = MatchOn.Follower;
+
+                // Get notfified about shutdown of the stream
+                stream.StallWarnings = true;
+
+                // Filterlevel of sensitive tweets
+                stream.FilterLevel = StreamFilterLevel.Low;
+
+                stream.KeepAliveReceived += async (sender, args) =>
+                {
+                    var streamstate = stream.StreamState;
+                    Console.WriteLine(streamstate.ToString());
+                    await Task.Delay(1);
+                };
+
+                stream.LimitReached += async (sender, eventReceived) =>
+                {
+                    Console.WriteLine("===========> Stream Warning... " + eventReceived.NumberOfTweetsNotReceived);
+
+                    await Task.Delay(1);
+                };
+
+                stream.WarningFallingBehindDetected += async (sender, args) =>
+                {
+                    Console.WriteLine($">_ Warning falling behind...");
+                    await Task.Delay(1000).ConfigureAwait(true);
+                };
+
+                stream.UnmanagedEventReceived += async (sender, args) =>
+                {
+                    Console.WriteLine($">_ Unmanged Event...");
+                    await Task.Delay(1000).ConfigureAwait(true);
+                };
+
+                stream.LimitReached += async (sender, args) =>
+                {
+                    Console.WriteLine($">_ Limit reached...");
+                    await Task.Delay(1000).ConfigureAwait(true);
+                };
+
+                stream.DisconnectMessageReceived += async (sender, args) =>
+                {
+                    Console.WriteLine($">_ Stream disconnected...");
+                    stream.Stop();
+                    Task.Delay(20000).Wait();
+                    await stream.StartMatchingAllConditionsAsync().ConfigureAwait(true);
+
+                };
+
+                stream.NonMatchingTweetReceived += async (sender, args) =>
+                {
+                    var tweet = args.Tweet;
+
+                    Console.WriteLine($"\n >>> Non matching tweet received... " + "" + tweet.Id);
+
+                    await Task.Delay(TimeSpan.FromMinutes(1));
+
+                };
+
+                _stream = stream;
+
+                stream.MatchingTweetReceived += async (sender, args) =>
+                {
+
+                    var tweet = args.Tweet;
+                    var hashTagCount = tweet.Entities.Hashtags.Count;
+
+                    if (args.MatchOn == stream.MatchOn)
+                    {
+                        if (tweet.IsRetweet == true)
+                        {
+                            Console.WriteLine($"\n >>> is retweet... " + "" + tweet.Id);
+                        }
+                        else if (hashTagCount > 3)
+                        {
+                            Console.WriteLine($"\n >>> banned for hashtagcount... " + "" + tweet.Id);
+                        }
+                        else if(tweet.Media.Count >= 1)
+                        {
+                            Console.WriteLine("Like and retweet tweet ID " + tweet.Id);
+
+                            await _userClient.Tweets.FavoriteTweetAsync(tweet);
+                            await _userClient.Tweets.PublishRetweetAsync(tweet);
+                        }
+                    }
+
+                    await Task.Delay(TimeSpan.FromSeconds(60));
+
+                };
+                await stream.StartMatchingAllConditionsAsync();
+            }
+            catch (TwitterException ex)
+            {
+                Console.WriteLine("TwitetrException: " + ex);
+            }
+            catch (SocketException ex)
+            {
+                Console.WriteLine($"\n>>> Socket Exception... " + ex);
+            }
+            catch (EndOfStreamException ex)
+            {
+                Console.WriteLine($"\n>>> Unexpected end of stream..." + ex);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"<_ " + ex);
+            }
+
+            await Task.Delay(5);
+        }
+        
+        /*
+        static async Task SubscribeToAccountActivity()
+        {
+            await Task.Delay(5);
+
+        }
+        */
+
+    }
+}
