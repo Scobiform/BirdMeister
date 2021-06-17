@@ -38,7 +38,6 @@ namespace BirdManager
             _tweetsArchive = tweetsArchive;
             _stream = stream;
         }
-
         static async Task Main(string[] args)
         {
             Console.Clear();
@@ -190,8 +189,6 @@ namespace BirdManager
                 Console.WriteLine("TwitterAuthException was thrown: " + ex);
             }
         }
-
-
         static string DrawMainMenu(List<string> items)
         {
             for (int i = 0; i < items.Count; i++)
@@ -265,13 +262,15 @@ namespace BirdManager
             }
             finally { }
         }
+
         static async Task AuthTwitter()
         {
+            //Please fill in your Twitter App Data
 
-            // Create a client for your app
-            // Move to Settings now
-            // 
-            var appClient = new TwitterClient("ZzE4pjN3bE2Wm4IITfYKtM6sg", "sluMyQzNrD7Lj6ZMm392UxDG8tgpPaVS01uYXRfEWchRYGyGhr");
+            string ConsumerKey = "";
+            string ConsumerSecret = "";
+
+            var appClient = new TwitterClient(ConsumerKey, ConsumerSecret);
 
             // Start the authentication process
             var authenticationRequest = await appClient.Auth.RequestAuthenticationUrlAsync();
@@ -477,6 +476,7 @@ namespace BirdManager
 
                 // Add keyword
                 stream.AddTrack(keyword);
+                stream.AddLanguageFilter("en");
 
                 // Only match the addfollows
                 stream.MatchOn = MatchOn.TweetText;
@@ -583,7 +583,7 @@ namespace BirdManager
                             Console.WriteLine("Like and retweet tweet ID " + tweet.Id);
 
                             await _userClient.Tweets.FavoriteTweetAsync(tweet);
-                            await _userClient.Tweets.PublishTweetAsync("The dragon will fly again #Bitcoin " + tweet.Url);
+                            await _userClient.Tweets.PublishRetweetAsync(tweet);
                         }
                     }
 
@@ -609,9 +609,6 @@ namespace BirdManager
                 Console.WriteLine($"<_ " + ex);
             }
         }
-
-
-
         static async Task CreateTweetDatabase()
         {
             // Check if tweetids.txt is already existing
@@ -621,7 +618,7 @@ namespace BirdManager
             }
             else
             {
-                // else gett all tweetids and store them in
+                // else get all tweetids and store them in
 
                 // Getting all tweets from tweet.js
                 Console.WriteLine(">>> Getting Tweets from tweet.js now");
@@ -756,8 +753,6 @@ namespace BirdManager
             }
 
         }
-
-
         static async Task ScanWhaleTrades(string assetShortCode)
         {
             try
@@ -926,8 +921,6 @@ namespace BirdManager
 
             await Task.Delay(5);
         }
-
-
         //Needs Rework
         //Neeeds Banlist
         //Needs other Filtertypes
@@ -1093,14 +1086,5 @@ namespace BirdManager
 
             await Task.Delay(5);
         }
-        
-        /*
-        static async Task SubscribeToAccountActivity()
-        {
-            await Task.Delay(5);
-
-        }
-        */
-
     }
 }
