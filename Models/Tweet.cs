@@ -1,4 +1,4 @@
-﻿namespace BirdManager.Models
+﻿namespace BirdMeister.Models
 {
     public class TweetArchive
     {

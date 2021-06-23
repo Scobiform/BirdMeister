@@ -1,4 +1,5 @@
-﻿using BirdManager.Models;
+﻿using BirdMeister.Models;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -14,8 +15,9 @@ using Tweetinvi.Exceptions;
 using Tweetinvi.Models;
 using Tweetinvi.Streaming;
 using Tweetinvi.Streaming.Parameters;
+using System.Reflection;
 
-namespace BirdManager
+namespace BirdMeister
 {
     class Program
     {
@@ -29,7 +31,7 @@ namespace BirdManager
         static IFilteredStream _stream;
 
         public Program(TwitterClient userclient, ITwitterList[] userLists, long[] friendIds, int membersAddedCount, 
-            string tweetsArchive, IFilteredStream stream)
+            string tweetsArchive, IFilteredStream stream, IConfiguration configuration)
         {
             _userClient = userclient;
             _userLists = userLists;
@@ -40,6 +42,8 @@ namespace BirdManager
         }
         static async Task Main(string[] args)
         {
+            
+
             Console.Clear();
             Console.OutputEncoding = System.Text.Encoding.Unicode;
 
@@ -76,7 +80,6 @@ namespace BirdManager
                     "┈UnfavTweets",
                     "┈--------------------Streams",
                     "┈StartFilteredKeyWordsStream",
-                    "┈ScanWhaleTradesForShortCode",
                     "┈Exit"
                 };
 
@@ -84,7 +87,7 @@ namespace BirdManager
                 while (true)
                 {
                     Console.WriteLine("┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈");
-                    Console.WriteLine("┈BirdManager 0.0.5                         ");
+                    Console.WriteLine("┈BirdMeister 0.0.6                         ");
                     Console.WriteLine("┈Logged in as: " + user.ScreenName);
                     Console.WriteLine("┈Followers count " + user.FollowersCount);
                     Console.WriteLine("┈Friends count " + user.FriendsCount);
@@ -168,16 +171,6 @@ namespace BirdManager
                         Parallel.Invoke(async () => await StartFilteredStream(keyword));
                     }
 
-                    else if (selectedMenuItem == "┈ScanWhaleTradesForShortCode")
-                    {
-                         Console.WriteLine("Please enter the asset shortcode ...");
-
-                        var assetShortCode = Console.ReadLine();
-                        Console.Clear();
-
-                        // Start filtered stream as parallel
-                        Parallel.Invoke(async () => await ScanWhaleTrades(assetShortCode));
-                    }
                     else if (selectedMenuItem == "┈Exit")
                     {
                         Environment.Exit(0);
@@ -262,15 +255,19 @@ namespace BirdManager
             }
             finally { }
         }
-
         static async Task AuthTwitter()
         {
-            //Please fill in your Twitter App Data
+            var configuration = new ConfigurationBuilder()
+               .AddUserSecrets(Assembly.GetExecutingAssembly())
+               .Build();
 
-            string ConsumerKey = "";
-            string ConsumerSecret = "";
+            var APIKey = configuration["APIKey"];
+            var APISecret = configuration["APISecret"];
 
-            var appClient = new TwitterClient(ConsumerKey, ConsumerSecret);
+            Console.WriteLine($"The secret value is: {APIKey}");
+            Console.WriteLine($"The secret value is: {APISecret}");
+
+            var appClient = new TwitterClient(APIKey, APISecret);
 
             // Start the authentication process
             var authenticationRequest = await appClient.Auth.RequestAuthenticationUrlAsync();
@@ -310,8 +307,6 @@ namespace BirdManager
             {
                 Console.WriteLine(list.Name);
             }
-
-
         }
         static async Task CopyUsersList(ITwitterList list)
         {
@@ -377,8 +372,9 @@ namespace BirdManager
         static async Task AddIdsToList()
         {
 
-            // Ask user which database to import
-            // To which list
+            Console.WriteLine("Please provide the userlist ID to which you want to import the user ids to");
+
+            var listId = Console.ReadLine();
 
             var sourceDir = @"Data\";
 
@@ -418,7 +414,7 @@ namespace BirdManager
                     {
                         await Task.Delay(TimeSpan.FromSeconds(rand.Next(5, 10)));
                         Console.WriteLine("Adding {0} to the list ", member);
-                        await _userClient.Lists.AddMemberToListAsync(1391027714665197574, Convert.ToInt64(member));
+                        await _userClient.Lists.AddMemberToListAsync(Convert.ToInt64(listId), Convert.ToInt64(member));
 
                         memberIds = File.ReadAllLines(sourceDir + fileName + ".txt").Skip(1).ToArray();
                         File.WriteAllLines(sourceDir + fileName + ".txt", memberIds);
@@ -440,8 +436,13 @@ namespace BirdManager
         }
         static async Task DeleteIdFromList(string Id)
         {
+
+            Console.WriteLine("Please provide the userlist ID from which you want to delete the user Ids");
+
+            var listId = Console.ReadLine();
+
             Console.WriteLine("Trying to delete the Id");
-            await _userClient.Lists.RemoveMemberFromListAsync(1391027714665197574, Convert.ToInt64(Id));
+            await _userClient.Lists.RemoveMemberFromListAsync(Convert.ToInt64(listId), Convert.ToInt64(Id));
             Console.WriteLine("Deleted...");
         }
         static async Task StartFilteredStream(string keyword)
@@ -611,6 +612,9 @@ namespace BirdManager
         }
         static async Task CreateTweetDatabase()
         {
+            Console.WriteLine("Please save your tweet.js from your downloaded Twitter archive to the Data folder and hit [ENTER]");
+            Console.ReadKey();
+
             // Check if tweetids.txt is already existing
             if (File.Exists("Data/tweetids.txt"))
             {
@@ -753,177 +757,6 @@ namespace BirdManager
             }
 
         }
-        static async Task ScanWhaleTrades(string assetShortCode)
-        {
-            try
-            {
-                TweetinviEvents.BeforeExecutingRequest += (sender, args) =>
-                {
-                    // lets delay all operations from this client by 2 seconds
-                    Task.Delay(TimeSpan.FromSeconds(5));
-                };
-
-                // Waiting for rate limits
-                TweetinviEvents.WaitingForRateLimit += (sender, args) =>
-                {
-                    Console.WriteLine($"\n Waiting for rate limits... ");
-                    Task.Delay(TimeSpan.FromHours(3));
-                };
-
-                // subscribe to application level events
-                TweetinviEvents.BeforeExecutingRequest += (sender, args) =>
-                {
-                    // application level logging
-                    Console.WriteLine($"\n >>> Event: " + args.Url + "\n");
-                };
-
-                // For a client to be included in the application events you will need to subscribe to this client's events
-                TweetinviEvents.SubscribeToClientEvents(_userClient);
-
-                // Create the stream for the user
-                var stream = _userClient.Streams.CreateFilteredStream();
-
-                stream.StreamStarted += async (sender, args) =>
-                {
-                    Console.WriteLine($">_ Stream started...");
-                    await Task.CompletedTask.ConfigureAwait(true);
-                };
-
-                stream.StreamResumed += async (sender, args) =>
-                {
-                    Console.WriteLine($">_ Stream resumed...");
-                    await Task.CompletedTask.ConfigureAwait(true);
-                };
-
-                stream.StreamStopped += async (sender, args) =>
-                {
-                    var exceptionThatCausedTheStreamToStop = args.Exception;
-                    var twitterDisconnectMessage = args.DisconnectMessage;
-
-                    Console.WriteLine(">_ Stream stopped... ");
-                    Console.WriteLine(">_ {0} ", twitterDisconnectMessage);
-
-                    Task.Delay(20000).Wait();
-
-                    await stream.StartMatchingAllConditionsAsync().ConfigureAwait(true);
-                };
-
-                // Adding the WhaleWatchers
-                // whale_alert WhaleTrades WhaleCallsAlts Whale_Sniper
-                var WhaleTrades = _userClient.Users.GetUserAsync("WhaleTrades").Result;
-                var whale_alert = _userClient.Users.GetUserAsync("whale_alert").Result;
-                var WhaleCallsAlts = _userClient.Users.GetUserAsync("WhaleCallsAlts").Result;
-                var Whale_Sniper = _userClient.Users.GetUserAsync("Whale_Sniper").Result;
-                var Whalecalls = _userClient.Users.GetUserAsync("whalecalls").Result;
-
-                // Add Follows for the accounts
-                stream.AddFollow(WhaleTrades.Id);
-                stream.AddFollow(whale_alert.Id);
-                stream.AddFollow(WhaleCallsAlts.Id);
-                stream.AddFollow(Whale_Sniper.Id);
-                stream.AddFollow(Whalecalls.Id);
-
-                // Add shortcode Track
-                stream.AddTrack(assetShortCode);
-
-                stream.MatchOn = MatchOn.TweetText;
-
-
-                // Get notfified about shutdown of the stream
-                stream.StallWarnings = true;
-
-                // Get notfified about shutdown of the stream
-                stream.StallWarnings = true;
-
-                // Filterlevel of sensitive tweets
-                stream.FilterLevel = StreamFilterLevel.Low;
-
-                stream.KeepAliveReceived += async (sender, args) =>
-                {
-                    var streamstate = stream.StreamState;
-                    Console.WriteLine(streamstate.ToString());
-                    await Task.Delay(1);
-                };
-
-                stream.LimitReached += async (sender, eventReceived) =>
-                {
-                    Console.WriteLine("===========> Stream Warning... " + eventReceived.NumberOfTweetsNotReceived);
-
-                    await Task.Delay(1);
-                };
-
-                stream.WarningFallingBehindDetected += async (sender, args) =>
-                {
-                    Console.WriteLine($">_ Warning falling behind...");
-                    await Task.Delay(1000).ConfigureAwait(true);
-                };
-
-                stream.UnmanagedEventReceived += async (sender, args) =>
-                {
-                    Console.WriteLine($">_ Unmanged Event...");
-                    await Task.Delay(1000).ConfigureAwait(true);
-                };
-
-                stream.LimitReached += async (sender, args) =>
-                {
-                    Console.WriteLine($">_ Limit reached...");
-                    await Task.Delay(1000).ConfigureAwait(true);
-                };
-
-                stream.DisconnectMessageReceived += async (sender, args) =>
-                {
-                    Console.WriteLine($">_ Stream disconnected...");
-                    stream.Stop();
-                    Task.Delay(20000).Wait();
-                    await stream.StartMatchingAllConditionsAsync().ConfigureAwait(true);
-
-                };
-
-                stream.NonMatchingTweetReceived += async (sender, args) =>
-                {
-                    var tweet = args.Tweet;
-
-                    Console.WriteLine($"\n >>> Non matching tweet received... " + "" + tweet.Id);
-
-                    await Task.Delay(TimeSpan.FromMinutes(1));
-
-                };
-
-                stream.MatchingTweetReceived += async (sender, eventReceived) =>
-                {
-                    var tweet = eventReceived.Tweet;
-
-                    Console.WriteLine(eventReceived.Tweet);
-
-                    await _userClient.Tweets.PublishRetweetAsync(tweet);
-
-                };
-                await stream.StartMatchingAllConditionsAsync();
-            }
-            catch (TwitterException ex)
-            {
-                Console.WriteLine("TwitetrException: " + ex);
-            }
-            catch (SocketException ex)
-            {
-                Console.WriteLine($"\n>>> Socket Exception... " + ex);
-            }
-            catch (EndOfStreamException ex)
-            {
-                Console.WriteLine($"\n>>> Unexpected end of stream..." + ex);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"<_ " + ex);
-            }
-
-
-
-            await Task.Delay(5);
-        }
-        //Needs Rework
-        //Neeeds Banlist
-        //Needs other Filtertypes
         static async Task StartListStream()
         {
             var sourceDir = @"Data\";
