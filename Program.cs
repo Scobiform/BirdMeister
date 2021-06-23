@@ -135,7 +135,7 @@ namespace BirdMeister
                     }
                     else if (selectedMenuItem == "┈BlockIds")
                     {
-                        // Block Users
+                        Parallel.Invoke(async () => await BlockIds());
                     }
                     else if (selectedMenuItem == "┈CreateTweetDatabase")
                     {
@@ -365,6 +365,67 @@ namespace BirdMeister
 
                 await Task.Delay(500);
             }
+        }
+        static async Task BlockIds()
+        {
+            var sourceDir = @"Data\";
+
+            Console.WriteLine("Which Id database do you want to import, \n" +
+                "please type the filename (without .txt) and hit ENTER.\n ");
+
+            var fileName = Console.ReadLine();
+
+            var userIds = File.ReadAllLines(sourceDir + fileName + ".txt");
+
+            if (File.Exists(sourceDir + fileName + "_backup.txt"))
+            {
+                Console.WriteLine(">>> Skipping backup creation because file already exists...");
+            }
+            else
+            {
+                Console.WriteLine(">>> Creating backup in data folder...");
+                File.Copy(Path.Combine(sourceDir, fileName + ".txt"), Path.Combine(sourceDir, fileName + "_backup.txt"));
+            }
+
+            // Random interval for Sleep Thread
+            var rand = new Random();
+
+            foreach (string user in userIds)
+            {
+                // Make today Database entry
+                // Rename membersAddedCount to the unique Indetifier
+                Console.WriteLine("Blocked users today: " + _membersAddedCount);
+                if (_membersAddedCount >= 850)
+                {
+                    Console.WriteLine("You will hit account limits for adding new members soon. Wait for 12 hours. \n#" +
+                        "Hit Enter to continue...");
+                    Console.ReadKey();
+                }
+                else
+                {
+                    try
+                    {
+                        await Task.Delay(TimeSpan.FromSeconds(rand.Next(5, 10)));
+                        Console.WriteLine("Adding {0} to the list ", user);
+                        await _userClient.Users.BlockUserAsync(Convert.ToInt64(user));
+
+                        userIds = File.ReadAllLines(sourceDir + fileName + ".txt").Skip(1).ToArray();
+                        File.WriteAllLines(sourceDir + fileName + ".txt", userIds);
+                    }
+                    catch (TwitterException ex)
+                    {
+                        Console.WriteLine("TwitterException: " + ex);
+
+                        userIds = File.ReadAllLines(sourceDir + fileName + ".txt").Skip(1).ToArray();
+                        File.WriteAllLines(sourceDir + fileName + ".txt", userIds);
+
+                    }
+                    _membersAddedCount++;
+                }
+
+            }
+
+            await Task.Delay(5000);
         }
         static async Task AddIdsToList()
         {
