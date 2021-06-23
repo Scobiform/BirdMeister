@@ -7,7 +7,7 @@ It is a good start also for people that get harassed by groups of people. Just g
 1. Register an APP at Twitter Developers
 2. Put your APIKey and Secret in the Seceret manager in Visual Studio
 
-$ dotnet user-secrets set "APIKey" "12345"
-$ dotnet user-secrets set "APISecret" "12345"
+- dotnet user-secrets set "APIKey" "12345"
+- dotnet user-secrets set "APISecret" "12345"
 
 
