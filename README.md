@@ -10,4 +10,6 @@ It is a good start also for people that get harassed by groups of people. Just g
 - dotnet user-secrets set "APIKey" "12345"
 - dotnet user-secrets set "APISecret" "12345"
 
+# Tweet Database
+For the Tweet Database download your Twitter profile archive and drop the including tweet.js into the Data folder. 
 
