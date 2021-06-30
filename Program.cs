@@ -95,8 +95,6 @@ namespace BirdMeister
                     Console.WriteLine("┈Menu:");
                     string selectedMenuItem = DrawMainMenu(menuItems);
 
-                    // Switch 
-
                     switch (selectedMenuItem)
                     {
                         case "┈GetUserLists":
@@ -172,90 +170,6 @@ namespace BirdMeister
                         default:
                             continue;           
                          }
-
-
-                    // Old if else
-                    /*
-                    if (selectedMenuItem == "┈GetUserLists")
-                    {
-                        Console.WriteLine("From which username you want to grab all lists?");
-                        var screenName = Console.ReadLine();
-                        Parallel.Invoke(async () => await GetUsersLists(screenName));
-                    }
-                    else if (selectedMenuItem == "┈CopyUserList")
-                    {
-                        Console.WriteLine("Which lists you want to copy to your account?");
-                        var count = 0;
-
-                        foreach (var list in _userLists)
-                        {
-                            Console.WriteLine("{0} {1} ", count, list.Name);
-                            count++;
-                        }
-
-                        var listNumber = Console.ReadLine();
-
-                        Parallel.Invoke(async () => await CopyUsersList(_userLists[Convert.ToInt32(listNumber)]));
-                    }
-                    else if (selectedMenuItem == "┈GetUsersFriendIds")
-                    {
-                        Console.WriteLine("From which username you want to grab all friends?");
-                        var screenName = Console.ReadLine();
-                        Parallel.Invoke(async () => await GetusersFriends(screenName));
-                    }
-                    else if (selectedMenuItem == "┈AddIdsToList")
-                    {
-                        Parallel.Invoke(async () => await AddIdsToList());
-                    }
-                    else if (selectedMenuItem == "┈DeleteIdFromList")
-                    {
-                        Console.WriteLine("Which Id do you want to delete from the list?");
-                        var userId = Console.ReadLine();
-
-
-                        Parallel.Invoke(async () => await DeleteIdFromList(userId));
-                    }
-                    else if (selectedMenuItem == "┈BlockIds")
-                    {
-                        Parallel.Invoke(async () => await BlockIds());
-                    }
-                    else if (selectedMenuItem == "┈CreateTweetDatabase")
-                    {
-                        Parallel.Invoke(async () => await CreateTweetDatabase());
-                    }
-                    else if (selectedMenuItem == "┈DeleteTweets")
-                    {
-                        Parallel.Invoke(async () => await DeleteTweets());
-                    }
-                    else if (selectedMenuItem == "┈UnfavTweets")
-                    {
-                        Parallel.Invoke(async () => await UnfavTweets());
-                    }
-                    else if (selectedMenuItem == "┈UnFollowAll")
-                    {
-                        Parallel.Invoke(async () => await UnFollowAll());
-                    }
-                    else if (selectedMenuItem == "┈DeleteTimeline")
-                    {
-                        Parallel.Invoke(async () => await DeleteTimeline());
-                    }
-                    else if (selectedMenuItem == "┈StartFilteredKeyWordsStream")
-                    {
-                        Console.WriteLine("Please enter the keyword you want to stream...");
-
-                        var keyword = Console.ReadLine();
-
-                        Console.Clear();
-
-                        // Start filtered stream as parallel
-                        Parallel.Invoke(async () => await StartFilteredStream(keyword));
-                    }
-
-                    else if (selectedMenuItem == "┈Exit")
-                    {
-                        Environment.Exit(0);
-                    }
-                    */
                 }
             }
             catch (TwitterAuthException ex)
@@ -377,7 +291,6 @@ namespace BirdMeister
         }
         static async Task GetUsersLists(string screenName)
         {
-
             var userId = _userClient.Users.GetUserAsync(screenName);
 
             var userLists = await _userClient.Lists.GetListsOwnedByUserAsync(userId.Result.Id);
@@ -391,8 +304,6 @@ namespace BirdMeister
         }
         static async Task CopyUsersList(ITwitterList list)
         {
-            // Make Folder for Id Databases
-
             var getListMembers = await _userClient.Lists.GetMembersOfListAsync(list.Id);
 
             var listName = list.Id;
@@ -414,7 +325,6 @@ namespace BirdMeister
                             writer.WriteLine(member.Id);
                         }
                     }
-
                     await Task.Delay(500);
                 }
         }
@@ -432,8 +342,7 @@ namespace BirdMeister
             }
             else
             {
-                // else gett all tweetids and store them in
-
+                // else get all tweetids and store them in
                 using (StreamWriter writer = new StreamWriter($"Data/"+screenName.ToString() + ".txt"))
                 {
                     foreach (var member in friendIds)
@@ -507,16 +416,13 @@ namespace BirdMeister
                 }
 
             }
-
             await Task.Delay(5000);
         }
         static async Task AddIdsToList()
         {
-
             Console.WriteLine("Please provide the userlist ID to which you want to import the user ids to");
 
             var listId = Console.ReadLine();
-
             var sourceDir = @"Data\";
 
             Console.WriteLine("Which Id database do you want to import, \n" +
@@ -570,14 +476,11 @@ namespace BirdMeister
                     }
                     _membersAddedCount++;
                 }
-
             }
-
             await Task.Delay(5000);
         }
         static async Task DeleteIdFromList(string Id)
         {
-
             Console.WriteLine("Please provide the userlist ID from which you want to delete the user Ids");
 
             var listId = Console.ReadLine();
@@ -682,31 +585,6 @@ namespace BirdMeister
 
                 stream.MatchingTweetReceived += async (sender, args) =>
                 {
-
-                    //var tweet = args.Tweet;
-                    //var hashTagCount = tweet.Entities.Hashtags.Count;
-
-                    //if (tweet.IsRetweet == true)
-                    //{
-                    //    Console.WriteLine($"\n >>> is retweet... " + "" + tweet.Id);
-                    //}
-                    //else if (hashTagCount > 3)
-                    //{
-                    //    Console.WriteLine($"\n >>> banned for hashtagcount... " + "" + tweet.Id);
-                    //}
-                    //else
-                    //{
-                    //    Console.WriteLine("Open Tweet with ID " + tweet.Id + " in Browser...");
-
-                    //    Process.Start(new ProcessStartInfo(tweet.Url)
-                    //    {
-                    //        UseShellExecute = true
-                    //    });
-                    //}
-
-                    //await Task.Delay(5);
-
-
                     var tweet = args.Tweet;
                     var hashTagCount = tweet.Entities.Hashtags.Count;
 
@@ -728,7 +606,6 @@ namespace BirdMeister
                             await _userClient.Tweets.PublishRetweetAsync(tweet);
                         }
                     }
-
                     await Task.Delay(TimeSpan.FromSeconds(60));
 
                 };
@@ -779,14 +656,15 @@ namespace BirdMeister
                         writer.WriteLine(tweets.tweet.id);
                     }
                 }
-
                 await Task.Delay(500);
             }
         }
         static async Task DeleteTweets()
         {
 
-            //if file not existing get the last tweets from the timeline...
+            // if file not existing get the last tweets from the timeline...
+            //
+            //
 
             var orderTweets = File.ReadAllLines("Data/tweetids.txt");
 
@@ -880,7 +758,6 @@ namespace BirdMeister
 
             var timeline = await _userClient.Timelines.GetHomeTimelineAsync();
 
-
             foreach(var tweet in timeline)
             {
 
@@ -894,9 +771,7 @@ namespace BirdMeister
                     Console.WriteLine("Deleteing Retweet" + tweet.Id);
                     await _userClient.Tweets.DestroyRetweetAsync(tweet.Id);
                 }
-
             }
-
         }
     }
 }
