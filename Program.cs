@@ -40,13 +40,13 @@ namespace BirdMeister
         }
         static async Task Main(string[] args)
         {
-            
 
             Console.Clear();
             Console.OutputEncoding = System.Text.Encoding.Unicode;
 
             Plugins.Add<AspNetPlugin>();
 
+            // Create Data Folder
             await CreateDirectory();
 
             try
@@ -85,7 +85,7 @@ namespace BirdMeister
                 while (true)
                 {
                     Console.WriteLine("┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈");
-                    Console.WriteLine("┈BirdMeister 0.0.6                         ");
+                    Console.WriteLine("┈BirdMeister 0.0.7                         ");
                     Console.WriteLine("┈Logged in as: " + user.ScreenName);
                     Console.WriteLine("┈Followers count " + user.FollowersCount);
                     Console.WriteLine("┈Friends count " + user.FriendsCount);
@@ -94,6 +94,88 @@ namespace BirdMeister
 
                     Console.WriteLine("┈Menu:");
                     string selectedMenuItem = DrawMainMenu(menuItems);
+
+                    // Switch 
+
+                    switch (selectedMenuItem)
+                    {
+                        case "┈GetUserLists":
+                            Console.WriteLine("From which username you want to grab all lists?");
+                            var screenName = Console.ReadLine();
+                            Parallel.Invoke(async () => await GetUsersLists(screenName));
+                            break;
+
+                        case "┈CopyUserList":
+                            Console.WriteLine("Which lists you want to copy to your account?");
+                            var count = 0;
+
+                            foreach (var list in _userLists)
+                            {
+                                Console.WriteLine("{0} {1} ", count, list.Name);
+                                count++;
+                            }
+
+                            var listNumber = Console.ReadLine();
+
+                            Parallel.Invoke(async () => await CopyUsersList(_userLists[Convert.ToInt32(listNumber)]));
+                            break;
+
+                        case "┈GetUsersFriendIds":
+                            Console.WriteLine("From which username you want to grab all friends?");
+                            var screenNameUserFriendsIds = Console.ReadLine();
+                            Parallel.Invoke(async () => await GetusersFriends(screenNameUserFriendsIds));
+                            break;
+
+                        case "┈AddIdsToList":
+                            Parallel.Invoke(async () => await AddIdsToList());
+                            break;
+
+                        case "┈DeleteIdFromList":
+                            Console.WriteLine("Which Id do you want to delete from the list?");
+                            var userId = Console.ReadLine();
+                            Parallel.Invoke(async () => await DeleteIdFromList(userId));
+                            break;
+
+                        case "┈BlockIds":
+                            Parallel.Invoke(async () => await BlockIds());
+                            break;
+
+                        case "┈CreateTweetDatabase":
+                            Parallel.Invoke(async () => await CreateTweetDatabase());
+                            break;
+
+                        case "┈DeleteTweets":
+                            Parallel.Invoke(async () => await DeleteTweets());
+                            break;
+
+                        case "┈UnfavTweets":
+                            Parallel.Invoke(async () => await UnfavTweets());
+                            break;
+
+                        case "┈UnFollowAll":
+                            Parallel.Invoke(async () => await UnFollowAll());
+                            break;
+
+                        case "┈DeleteTimeline":
+                            Parallel.Invoke(async () => await DeleteTimeline());
+                            break;
+
+                        case "┈StartFilteredKeyWordsStream":
+                            Console.WriteLine("Please enter the keyword you want to stream...");
+                            var keyword = Console.ReadLine();
+                            Console.Clear();
+                            // Start filtered stream as parallel
+                            Parallel.Invoke(async () => await StartFilteredStream(keyword));
+                            break;
+
+                        case "-Exit":
+                        default:
+                            continue;           
+                         }
+
+
+                    // Old if else
+                    /*
                     if (selectedMenuItem == "┈GetUserLists")
                     {
                         Console.WriteLine("From which username you want to grab all lists?");
@@ -173,6 +255,7 @@ namespace BirdMeister
                     {
                         Environment.Exit(0);
                     }
+                    */
                 }
             }
             catch (TwitterAuthException ex)
