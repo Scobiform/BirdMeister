@@ -29,7 +29,7 @@ namespace BirdMeister
         static string _tweetsArchive;
         static IFilteredStream _stream;
         public Program(TwitterClient userclient, ITwitterList[] userLists, long[] friendIds, int membersAddedCount, 
-            string tweetsArchive, IFilteredStream stream, IConfiguration configuration)
+            string tweetsArchive, IFilteredStream stream)
         {
             _userClient = userclient;
             _userLists = userLists;
