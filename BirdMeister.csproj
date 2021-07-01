@@ -3,11 +3,23 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net5.0</TargetFramework>
-    <Description>BirdMeister automates common TwitterTasks</Description>
+    <Description>Little .NET 5.0 CLI Tool for Twitter to automate Deleting Tweets, Lists, User friend Ids and start Filtered Streams. Using Tweetinvi by https://github.com/linvi
+It is a good start for people that get harassed by groups of people on Twitter. Just grab all friend Ids and block all users with your account.
+
+</Description>
     <Copyright>scobiform.com 2021</Copyright>
     <ApplicationIcon></ApplicationIcon>
     <NoWin32Manifest>true</NoWin32Manifest>
     <UserSecretsId>55519635-2178-44a4-bcbc-faeb8397aa0b</UserSecretsId>
+    <Version>0.0.7</Version>
+    <PackageProjectUrl>https://github.com/Scobiform/BirdMeister</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Scobiform/BirdMeister</RepositoryUrl>
+    <PackageTags>Twitter, tweetinvi, Social Media</PackageTags>
+    <PackageReleaseNotes>Still very early stage.</PackageReleaseNotes>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants />
   </PropertyGroup>
 
   <ItemGroup>
