@@ -59,7 +59,7 @@ namespace BirdMeister
                 var user = await _userClient.Users.GetAuthenticatedUserAsync();
 
                 // Draw Menu
-                List<string> menuItems = new List<string>()
+                List<string> menuItems = new()
                 {
                     "┈----------------------Lists",
                     "┈GetUserLists",
@@ -343,7 +343,7 @@ namespace BirdMeister
             else
             {
                 // else get all tweetids and store them in
-                using (StreamWriter writer = new StreamWriter($"Data/"+screenName.ToString() + ".txt"))
+                using (StreamWriter writer = new($"Data/"+screenName.ToString() + ".txt"))
                 {
                     foreach (var member in friendIds)
                     {
@@ -648,12 +648,12 @@ namespace BirdMeister
                 _tweetsArchive = File.ReadAllText("Data/tweet.js");
                 var TweetArchive = JsonSerializer.Deserialize<List<Tweets>>(_tweetsArchive);
 
-                using (StreamWriter writer = new StreamWriter("Data/tweetids.txt"))
+                using (StreamWriter writer = new("Data/tweetids.txt"))
                 {
                     foreach (var tweets in TweetArchive)
                     {
-                        Console.WriteLine(">>> Writing " + tweets.tweet.id + " to tweetids.txt");
-                        writer.WriteLine(tweets.tweet.id);
+                        Console.WriteLine(">>> Writing " + tweets.Tweet.Id + " to tweetids.txt");
+                        writer.WriteLine(tweets.Tweet.Id);
                     }
                 }
                 await Task.Delay(500);
