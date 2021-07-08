@@ -195,6 +195,7 @@ namespace BirdMeister
             }
 
             ConsoleKeyInfo ckey = Console.ReadKey();
+
             if (ckey.Key == ConsoleKey.DownArrow)
             {
                 if (indexMainMenu == items.Count - 1) { }
@@ -442,7 +443,7 @@ namespace BirdMeister
                 File.Copy(Path.Combine(sourceDir, fileName + ".txt"), Path.Combine(sourceDir, fileName + "_backup.txt"));
             }
 
-            // Random interval for Sleep Thread
+            // Random interval for Task Delay
             var rand = new Random();
 
             foreach (string member in memberIds)
@@ -663,7 +664,7 @@ namespace BirdMeister
         {
 
             // if file not existing get the last tweets from the timeline...
-            //
+            // needs reWork
             //
 
             var orderTweets = File.ReadAllLines("Data/tweetids.txt");
