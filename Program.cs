@@ -69,6 +69,7 @@ namespace BirdMeister
                     "┈----------------------Users",
                     "┈GetUsersFriendIds",
                     "┈BlockIds",
+                    "┈FollowIds",
                     "┈---------------------Tweets",
                     "┈CreateTweetDatabase",
                     "┈DeleteTweets",
@@ -85,7 +86,7 @@ namespace BirdMeister
                 while (true)
                 {
                     Console.WriteLine("┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈");
-                    Console.WriteLine("┈BirdMeister 0.0.7                         ");
+                    Console.WriteLine("┈BirdMeister                               ");
                     Console.WriteLine("┈Logged in as: " + user.ScreenName);
                     Console.WriteLine("┈Followers count " + user.FollowersCount);
                     Console.WriteLine("┈Friends count " + user.FriendsCount);
@@ -136,6 +137,10 @@ namespace BirdMeister
 
                         case "┈BlockIds":
                             Parallel.Invoke(async () => await BlockIds());
+                            break;
+
+                        case "┈FollowIds":
+                            Parallel.Invoke(async () => await FollowIds());
                             break;
 
                         case "┈CreateTweetDatabase":
@@ -401,6 +406,66 @@ namespace BirdMeister
                         await Task.Delay(TimeSpan.FromSeconds(rand.Next(5, 10)));
                         Console.WriteLine("Adding {0} to the list ", user);
                         await _userClient.Users.BlockUserAsync(Convert.ToInt64(user));
+
+                        userIds = File.ReadAllLines(sourceDir + fileName + ".txt").Skip(1).ToArray();
+                        File.WriteAllLines(sourceDir + fileName + ".txt", userIds);
+                    }
+                    catch (TwitterException ex)
+                    {
+                        Console.WriteLine("TwitterException: " + ex);
+
+                        userIds = File.ReadAllLines(sourceDir + fileName + ".txt").Skip(1).ToArray();
+                        File.WriteAllLines(sourceDir + fileName + ".txt", userIds);
+
+                    }
+                    _membersAddedCount++;
+                }
+
+            }
+            await Task.Delay(5000);
+        }
+        static async Task FollowIds()
+        {
+            var sourceDir = @"Data\";
+
+            Console.WriteLine("Which Id database do you want to import, \n" +
+                "please type the filename (without .txt) and hit ENTER.\n ");
+
+            var fileName = Console.ReadLine();
+
+            var userIds = File.ReadAllLines(sourceDir + fileName + ".txt");
+
+            if (File.Exists(sourceDir + fileName + "_backup.txt"))
+            {
+                Console.WriteLine(">>> Skipping backup creation because file already exists...");
+            }
+            else
+            {
+                Console.WriteLine(">>> Creating backup in data folder...");
+                File.Copy(Path.Combine(sourceDir, fileName + ".txt"), Path.Combine(sourceDir, fileName + "_backup.txt"));
+            }
+
+            // Random interval for Sleep Thread
+            var rand = new Random();
+
+            foreach (string user in userIds)
+            {
+                // Make today Database entry
+                // Rename membersAddedCount to the unique Indetifier
+                Console.WriteLine("Added users today: " + _membersAddedCount);
+                if (_membersAddedCount >= 850)
+                {
+                    Console.WriteLine("You will hit account limits for adding new members soon. Wait for 12 hours. \n#" +
+                        "Hit Enter to continue...");
+                    Console.ReadKey();
+                }
+                else
+                {
+                    try
+                    {
+                        await Task.Delay(TimeSpan.FromSeconds(rand.Next(5, 10)));
+                        Console.WriteLine("Followed {0} ", user);
+                        await _userClient.Users.FollowUserAsync(Convert.ToInt64(user));
 
                         userIds = File.ReadAllLines(sourceDir + fileName + ".txt").Skip(1).ToArray();
                         File.WriteAllLines(sourceDir + fileName + ".txt", userIds);
