@@ -445,7 +445,7 @@ namespace BirdMeister
                 File.Copy(Path.Combine(sourceDir, fileName + ".txt"), Path.Combine(sourceDir, fileName + "_backup.txt"));
             }
 
-            // Random interval for Sleep Thread
+            // Random interval
             var rand = new Random();
 
             foreach (string user in userIds)
@@ -590,7 +590,7 @@ namespace BirdMeister
                 stream.AddLanguageFilter("en");
 
                 // Only match the addfollows
-                stream.MatchOn = MatchOn.TweetText;
+                stream.MatchOn = MatchOn.HashTagEntities;
 
                 // Get notfified about shutdown of the stream
                 stream.StallWarnings = true;
