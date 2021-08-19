@@ -852,13 +852,13 @@ namespace BirdMeister
             // get currently blocked Ids
             Console.WriteLine("Getting all blocked users...");
             var blocked = await _userClient.Users.GetBlockedUsersAsync();
-            Console.WriteLine("Trying to ublock all users that were found...");
+            Console.WriteLine("Trying to unblock all users that were found...");
             foreach (var user in blocked)
             {
                 Console.WriteLine("Unblocking user with the id: " + user.Id);
                 await _userClient.Users.UnblockUserAsync(user.Id);
-                Console.WriteLine("Waiting for 3 Minutes ");
-                await Task.Delay(TimeSpan.FromMinutes(3));
+                Console.WriteLine("Waiting for 30 Seconds because of rate limits ");
+                await Task.Delay(TimeSpan.FromSeconds(30));
             }
         }
 
