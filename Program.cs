@@ -67,7 +67,8 @@ namespace BirdMeister
                     "┈AddIdsToList",
                     "┈DeleteIdFromList",
                     "┈----------------------Users",
-                    "┈GetUsersFriendIds",
+                    "┈GetUserDetails",
+                    "┈GetUserFriendIds",
                     "┈BlockIds",
                     "┈UnblockAllIds",
                     "┈FollowIds",
@@ -119,11 +120,16 @@ namespace BirdMeister
 
                             Parallel.Invoke(async () => await CopyUsersList(_userLists[Convert.ToInt32(listNumber)]));
                             break;
+                        case "┈GetUserDetails":
+                            Console.WriteLine("From which username you want to grab all lists?");
+                            var screenNameUser = Console.ReadLine();
+                            Parallel.Invoke(async () => await GetUserDetails(screenNameUser));
+                            break;
 
-                        case "┈GetUsersFriendIds":
+                        case "┈GetUserFriendIds":
                             Console.WriteLine("From which username you want to grab all friends?");
                             var screenNameUserFriendsIds = Console.ReadLine();
-                            Parallel.Invoke(async () => await GetusersFriends(screenNameUserFriendsIds));
+                            Parallel.Invoke(async () => await GetUserFriends(screenNameUserFriendsIds));
                             break;
 
                         case "┈AddIdsToList":
@@ -300,6 +306,27 @@ namespace BirdMeister
             _userClient = userClient;
 
         }
+        static async Task GetUserDetails(string screenNameUser)
+        {
+            var userId = _userClient.Users.GetUserAsync(screenNameUser);
+
+            Console.WriteLine("Getting all blocked users..."
+                + "\n Id: \t" + userId.Result.Id
+                + "\n Screenname: \t" + userId.Result.ScreenName
+                + "\n Name: \t" + userId.Result.Name
+                + "\n Description: \t" + userId.Result.Description
+                + "\n Created at: \t" + userId.Result.CreatedAt
+                + "\n Favorites: \t" + userId.Result.FavoritesCount
+                + "\n Followers: \t" + userId.Result.FollowersCount
+                + "\n Friends: \t" + userId.Result.FriendsCount
+                + "\n Listed: \t" + userId.Result.ListedCount
+                + "\n Location: \t" + userId.Result.Location
+                );
+
+            Console.WriteLine("Hit enter to continue...");
+            Console.ReadKey();
+            await Task.CompletedTask.ConfigureAwait(true);
+        }
         static async Task GetUsersLists(string screenName)
         {
             var userId = _userClient.Users.GetUserAsync(screenName);
@@ -339,7 +366,7 @@ namespace BirdMeister
                     await Task.Delay(500);
                 }
         }
-        static async Task GetusersFriends(string screenName)
+        static async Task GetUserFriends(string screenName)
         {
             var userId = _userClient.Users.GetUserAsync(screenName);
 
