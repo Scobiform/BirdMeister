@@ -429,6 +429,21 @@ namespace BirdMeister
             }
             await Task.Delay(5000);
         }
+        static async Task UnblockAllIds()
+        {
+
+            // Get currently blocked Ids
+            Console.WriteLine("Getting all blocked users...");
+            var blocked = await _userClient.Users.GetBlockedUsersAsync();
+            Console.WriteLine("Trying to unblock all users that were found...");
+            foreach (var user in blocked)
+            {
+                Console.WriteLine("Unblocking user with the id: " + user.Id);
+                await _userClient.Users.UnblockUserAsync(user.Id);
+                Console.WriteLine("Waiting for 20 Seconds because of rate limits ");
+                await Task.Delay(TimeSpan.FromSeconds(20));
+            }
+        }
         static async Task FollowIds()
         {
             var sourceDir = @"Data\";
@@ -844,164 +859,6 @@ namespace BirdMeister
                     await _userClient.Tweets.DestroyRetweetAsync(tweet.Id);
                 }
             }
-        }
-
-        static async Task UnblockAllIds()
-        {
-
-            // get currently blocked Ids
-            Console.WriteLine("Getting all blocked users...");
-            var blocked = await _userClient.Users.GetBlockedUsersAsync();
-            Console.WriteLine("Trying to unblock all users that were found...");
-            foreach (var user in blocked)
-            {
-                Console.WriteLine("Unblocking user with the id: " + user.Id);
-                await _userClient.Users.UnblockUserAsync(user.Id);
-                Console.WriteLine("Waiting for 30 Seconds because of rate limits ");
-                await Task.Delay(TimeSpan.FromSeconds(30));
-            }
-        }
-
-        static async Task StartListStream(long Id)
-        {
-            // Currently it is possible to start 2 streams per user.
-            try
-            {
-                TweetinviEvents.BeforeExecutingRequest += (sender, args) =>
-                {
-                    // lets delay all operations from this client by 5 seconds
-                    Task.Delay(TimeSpan.FromSeconds(5));
-                };
-
-                // Waiting for rate limits
-                TweetinviEvents.WaitingForRateLimit += (sender, args) =>
-                {
-                    Console.WriteLine($"\n Waiting for rate limits... ");
-                    Task.Delay(TimeSpan.FromHours(3));
-                };
-
-                // subscribe to application level events
-                TweetinviEvents.BeforeExecutingRequest += (sender, args) =>
-                {
-                    // application level logging
-                    Console.WriteLine($"\n >>> Event: " + args.Url + "\n");
-                };
-
-                // For a client to be included in the application events you will need to subscribe to this client's events
-                TweetinviEvents.SubscribeToClientEvents(_userClient);
-
-                // Start Stream
-                var stream = _userClient.Streams.CreateFilteredStream();
-
-                // Add every User of a list to the stream
-                // stream.AddTrack(Id);
-                stream.AddLanguageFilter("en");
-
-                // Only match the addfollows
-                stream.MatchOn = MatchOn.HashTagEntities;
-
-                // Get notfified about shutdown of the stream
-                stream.StallWarnings = true;
-
-                // Filterlevel of sensitive tweets
-                stream.FilterLevel = StreamFilterLevel.Low;
-
-                stream.KeepAliveReceived += async (sender, args) =>
-                {
-                    var streamstate = stream.StreamState;
-                    Console.WriteLine(streamstate.ToString());
-                    await Task.Delay(1);
-                };
-
-                stream.LimitReached += async (sender, eventReceived) =>
-                {
-                    Console.WriteLine("===========> Stream Warning... " + eventReceived.NumberOfTweetsNotReceived);
-
-                    await Task.Delay(1);
-                };
-
-                stream.WarningFallingBehindDetected += async (sender, args) =>
-                {
-                    Console.WriteLine($">_ Warning falling behind...");
-                    await Task.Delay(1000).ConfigureAwait(true);
-                };
-
-                stream.UnmanagedEventReceived += async (sender, args) =>
-                {
-                    Console.WriteLine($">_ Unmanged Event...");
-                    await Task.Delay(1000).ConfigureAwait(true);
-                };
-
-                stream.LimitReached += async (sender, args) =>
-                {
-                    Console.WriteLine($">_ Limit reached...");
-                    await Task.Delay(1000).ConfigureAwait(true);
-                };
-
-                stream.DisconnectMessageReceived += async (sender, args) =>
-                {
-                    Console.WriteLine($">_ Stream disconnected...");
-                    stream.Stop();
-                    Task.Delay(20000).Wait();
-                    await stream.StartMatchingAllConditionsAsync().ConfigureAwait(true);
-
-                };
-
-                stream.NonMatchingTweetReceived += async (sender, args) =>
-                {
-                    var tweet = args.Tweet;
-
-                    Console.WriteLine($"\n >>> Non matching tweet received... " + "" + tweet.Id);
-
-                    await Task.Delay(TimeSpan.FromMinutes(1));
-
-                };
-
-                stream.MatchingTweetReceived += async (sender, args) =>
-                {
-                    var tweet = args.Tweet;
-                    var hashTagCount = tweet.Entities.Hashtags.Count;
-
-                    if (args.MatchOn == stream.MatchOn)
-                    {
-                        if (tweet.IsRetweet == true)
-                        {
-                            Console.WriteLine($"\n >>> is retweet... " + "" + tweet.Id);
-                        }
-                        else if (hashTagCount > 3)
-                        {
-                            Console.WriteLine($"\n >>> banned for hashtagcount... " + "" + tweet.Id);
-                        }
-                        else if (tweet.Media.Count >= 1)
-                        {
-                            Console.WriteLine("Like and retweet tweet ID " + tweet.Id);
-
-                            await _userClient.Tweets.FavoriteTweetAsync(tweet);
-                            await _userClient.Tweets.PublishRetweetAsync(tweet);
-                        }
-                    }
-                    await Task.Delay(TimeSpan.FromSeconds(60));
-
-                };
-                await stream.StartMatchingAllConditionsAsync();
-            }
-            catch (TwitterException ex)
-            {
-                Console.WriteLine("TwitetrException: " + ex);
-            }
-            catch (SocketException ex)
-            {
-                Console.WriteLine($"\n>>> Socket Exception... " + ex);
-            }
-            catch (EndOfStreamException ex)
-            {
-                Console.WriteLine($"\n>>> Unexpected end of stream..." + ex);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"<_ " + ex);
-            }
-
         }
     }
 }
