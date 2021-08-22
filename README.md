@@ -1,4 +1,4 @@
-# BirdMeister Version 0.0.8
+# BirdMeister Version 0.0.9
 Little .NET 5.0 CLI Tool for Twitter to automate Deleting Tweets, Lists, User friend Ids and start Filtered Streams. Using Tweetinvi by https://github.com/linvi
 It is a good start for people that get harassed by groups of people on Twitter. Just grab all friend Ids and block all users with your account.
 
@@ -12,7 +12,8 @@ Still very scatchy - Will Update soon.
 - dotnet user-secrets set "APISecret" "12345"
 
 # Tweet Database
-For the Tweet Database download your Twitter profile archive and drop the including tweet.js into the Data folder.
+For the Tweet Database download your Twitter profile archive and drop the including tweet.js into the Data folder. 
+Do not forget to make the json a valid json file. (will automate that later)
 
 # Filtered Stream
 The Tweets will open up in your Standard Browser
