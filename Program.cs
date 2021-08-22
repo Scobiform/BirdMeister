@@ -185,7 +185,7 @@ namespace BirdMeister
                         case "-Exit":
                         default:
                             continue;           
-                         }
+                    }
                 }
             }
             catch (TwitterAuthException ex)
