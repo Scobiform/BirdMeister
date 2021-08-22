@@ -121,7 +121,7 @@ namespace BirdMeister
                             Parallel.Invoke(async () => await CopyUsersList(_userLists[Convert.ToInt32(listNumber)]));
                             break;
                         case "┈GetUserDetails":
-                            Console.WriteLine("From which username you want to grab all lists?");
+                            Console.WriteLine("From which username you want to grab the details?");
                             var screenNameUser = Console.ReadLine();
                             Parallel.Invoke(async () => await GetUserDetails(screenNameUser));
                             break;
