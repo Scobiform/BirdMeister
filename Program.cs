@@ -310,17 +310,20 @@ namespace BirdMeister
         {
             var userId = _userClient.Users.GetUserAsync(screenNameUser);
 
-            Console.WriteLine("Getting all blocked users..."
+            Console.WriteLine("Getting user details..."
+                +"\n┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈"
                 + "\n Id: \t" + userId.Result.Id
                 + "\n Screenname: \t" + userId.Result.ScreenName
                 + "\n Name: \t" + userId.Result.Name
-                + "\n Description: \t" + userId.Result.Description
+                + "\n Location: \t" + userId.Result.Location
                 + "\n Created at: \t" + userId.Result.CreatedAt
+                + "\n┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈"
+                + "\n Description: \t" + userId.Result.Description
+                + "\n┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈"
                 + "\n Favorites: \t" + userId.Result.FavoritesCount
                 + "\n Followers: \t" + userId.Result.FollowersCount
                 + "\n Friends: \t" + userId.Result.FriendsCount
                 + "\n Listed: \t" + userId.Result.ListedCount
-                + "\n Location: \t" + userId.Result.Location
                 );
 
             Console.WriteLine("Hit enter to continue...");
