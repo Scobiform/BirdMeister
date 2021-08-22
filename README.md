@@ -1,4 +1,4 @@
-<img align="center" width="320" height="320" src="https://github.com/Scobiform/BirdMeister/blob/master/birdmeister.png">
+<img align="center" width="160" height="160" src="https://github.com/Scobiform/BirdMeister/blob/master/birdmeister.png">
 
 # BirdMeister Version 0.1.0
 Little .NET 5.0 CLI Tool for Twitter to automate Deleting Tweets, Lists, User friend Ids and start Filtered Streams. Using Tweetinvi by https://github.com/linvi
