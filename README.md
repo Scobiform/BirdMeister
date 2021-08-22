@@ -19,3 +19,5 @@ Do not forget to make the json a valid json file. (will automate that later)
 # Filtered Stream
 The Tweets will open up in your Standard Browser
 
+# Screenshots
+<img align="center" width="100" height="100" src="https://github.com/Scobiform/BirdMeister/blob/master/menu.png">
