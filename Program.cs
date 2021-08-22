@@ -209,9 +209,7 @@ namespace BirdMeister
                 }
                 Console.ResetColor();
             }
-
             ConsoleKeyInfo ckey = Console.ReadKey();
-
             switch (ckey.Key) //Switch on Key enum
             {
                 case ConsoleKey.DownArrow:
@@ -227,13 +225,8 @@ namespace BirdMeister
                 case ConsoleKey.Escape:
                     break;                
             }
-
             Console.Clear();
             return "";
-
-
-
-
         }
         static async Task CreateDirectory()
         {
