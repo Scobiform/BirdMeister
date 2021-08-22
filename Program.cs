@@ -324,6 +324,7 @@ namespace BirdMeister
                 + "\n Followers: \t" + userId.Result.FollowersCount
                 + "\n Friends: \t" + userId.Result.FriendsCount
                 + "\n Listed: \t" + userId.Result.ListedCount
+                + "\n Statuses: \t" + userId.Result.StatusesCount
                 );
 
             Console.WriteLine("Hit enter to continue...");
