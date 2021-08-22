@@ -212,35 +212,28 @@ namespace BirdMeister
 
             ConsoleKeyInfo ckey = Console.ReadKey();
 
-            if (ckey.Key == ConsoleKey.DownArrow)
+            switch (ckey.Key) //Switch on Key enum
             {
-                if (indexMainMenu == items.Count - 1) { }
-                else { indexMainMenu++; }
-            }
-            else if (ckey.Key == ConsoleKey.UpArrow)
-            {
-                if (indexMainMenu <= 0) { }
-                else { indexMainMenu--; }
-            }
-            else if (ckey.Key == ConsoleKey.LeftArrow)
-            {
-                Console.Clear();
-            }
-            else if (ckey.Key == ConsoleKey.RightArrow)
-            {
-                Console.Clear();
-            }
-            else if (ckey.Key == ConsoleKey.Enter)
-            {
-                return items[indexMainMenu];
-            }
-            else
-            {
-                return "";
+                case ConsoleKey.DownArrow:
+                    if (indexMainMenu == items.Count - 1) { }
+                    else { indexMainMenu++; }
+                    break;
+                case ConsoleKey.UpArrow:
+                    if (indexMainMenu <= 0) { }
+                    else { indexMainMenu--; }
+                    break;
+                case ConsoleKey.Enter:
+                    return items[indexMainMenu];
+                case ConsoleKey.Escape:
+                    break;                
             }
 
             Console.Clear();
             return "";
+
+
+
+
         }
         static async Task CreateDirectory()
         {
