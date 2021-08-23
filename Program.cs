@@ -441,11 +441,7 @@ namespace BirdMeister
             await Task.Delay(5000);
         }
         static async Task UnblockAllIds()
-        {
-            Console.WriteLine("Getting rate limits...");
-            var rateLimits = await _userClient.RateLimits.GetRateLimitsAsync();
-            Console.WriteLine("BlocksIdsLimit remaining: " + rateLimits.BlocksIdsLimit.Remaining);
-            
+        {      
             int count = 0;
             // Get currently blocked Ids
             Console.WriteLine("Getting all blocked users...");
