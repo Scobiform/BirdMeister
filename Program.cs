@@ -358,8 +358,6 @@ namespace BirdMeister
 
             var friendIds = await _userClient.Users.GetFriendIdsAsync(userId.Result.Id);
 
-            _friendIds = friendIds;
-
             if (File.Exists("Data/" + screenName.ToString() + ".txt"))
             {
                 Console.WriteLine(">>> Skipping friends database creation because file already exists");
@@ -854,8 +852,6 @@ namespace BirdMeister
         }
         static async Task DeleteTimeline()
         {
-            var user = await _userClient.Users.GetAuthenticatedUserAsync();
-
             var timeline = await _userClient.Timelines.GetHomeTimelineAsync();
 
             foreach(var tweet in timeline)
