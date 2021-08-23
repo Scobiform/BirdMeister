@@ -24,19 +24,15 @@ namespace BirdMeister
         static int indexMainMenu = 0;
         static TwitterClient _userClient;
         static ITwitterList[] _userLists;
-        static long[] _friendIds;
         static int _membersAddedCount;
         static string _tweetsArchive;
-        static IFilteredStream _stream;
-        public Program(TwitterClient userclient, ITwitterList[] userLists, long[] friendIds, int membersAddedCount, 
-            string tweetsArchive, IFilteredStream stream)
+        public Program(TwitterClient userclient, ITwitterList[] userLists, int membersAddedCount, 
+            string tweetsArchive)
         {
             _userClient = userclient;
             _userLists = userLists;
-            _friendIds = friendIds;
             _membersAddedCount = membersAddedCount;
             _tweetsArchive = tweetsArchive;
-            _stream = stream;
         }
         static async Task Main(string[] args)
         {
