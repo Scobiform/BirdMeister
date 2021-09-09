@@ -65,6 +65,7 @@ namespace BirdMeister
                     "┈----------------------Users",
                     "┈GetUserDetails",
                     "┈GetUserFriendIds",
+                    "┈GetUserFollowerIds",
                     "┈BlockIds",
                     "┈UnblockAllIds",
                     "┈FollowIds",
@@ -126,6 +127,12 @@ namespace BirdMeister
                             Console.WriteLine("From which username you want to grab all friends?");
                             var screenNameUserFriendsIds = Console.ReadLine();
                             Parallel.Invoke(async () => await GetUserFriends(screenNameUserFriendsIds));
+                            break;
+
+                        case "┈GetUserFollowerIds":
+                            Console.WriteLine("From which username you want to grab all friends?");
+                            var screenNameUserFollowerIds = Console.ReadLine();
+                            Parallel.Invoke(async () => await GetUserFriends(screenNameUserFollowerIds));
                             break;
 
                         case "┈AddIdsToList":
@@ -366,6 +373,34 @@ namespace BirdMeister
             {
                 // else get all tweetids and store them in
                 using (StreamWriter writer = new($"Data/"+screenName.ToString() + ".txt"))
+                {
+                    foreach (var member in friendIds)
+                    {
+                        Thread.Sleep(TimeSpan.FromSeconds(1));
+                        Console.WriteLine(">>> Writing " + member);
+                        writer.WriteLine(member);
+                    }
+                }
+
+                Console.WriteLine(">>> Succesfully created friendId database of user: " + screenName);
+
+                await Task.Delay(500);
+            }
+        }
+        static async Task GetUserFollowers(string screenName)
+        {
+            var userId = _userClient.Users.GetUserAsync(screenName);
+
+            var followerIds = await _userClient.Users.GetFollowerIdsAsync(userId.Result.Id);
+
+            if (File.Exists("Data/" + screenName.ToString() + ".txt"))
+            {
+                Console.WriteLine(">>> Skipping friends database creation because file already exists");
+            }
+            else
+            {
+                // else get all tweetids and store them in
+                using (StreamWriter writer = new($"Data/" + screenName.ToString() + ".txt"))
                 {
                     foreach (var member in friendIds)
                     {
