@@ -132,7 +132,7 @@ namespace BirdMeister
                         case "┈GetUserFollowerIds":
                             Console.WriteLine("From which username you want to grab all friends?");
                             var screenNameUserFollowerIds = Console.ReadLine();
-                            Parallel.Invoke(async () => await GetUserFriends(screenNameUserFollowerIds));
+                            Parallel.Invoke(async () => await GetUserFollowers(screenNameUserFollowerIds));
                             break;
 
                         case "┈AddIdsToList":
@@ -348,7 +348,7 @@ namespace BirdMeister
                 {
                     // else gett all tweetids and store them in
 
-                    using (StreamWriter writer = new StreamWriter("Data/" + listName.ToString() + ".txt"))
+                    using (StreamWriter writer = new("Data/" + listName.ToString() + ".txt"))
                     {
                         foreach (var member in getListMembers)
                         {
@@ -402,7 +402,7 @@ namespace BirdMeister
                 // else get all tweetids and store them in
                 using (StreamWriter writer = new($"Data/" + screenName.ToString() + ".txt"))
                 {
-                    foreach (var member in friendIds)
+                    foreach (var member in followerIds)
                     {
                         Thread.Sleep(TimeSpan.FromSeconds(1));
                         Console.WriteLine(">>> Writing " + member);
