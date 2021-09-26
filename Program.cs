@@ -26,13 +26,15 @@ namespace BirdMeister
         static ITwitterList[] _userLists;
         static int _membersAddedCount;
         static string _tweetsArchive;
+        static IFilteredStream _stream;
         public Program(TwitterClient userclient, ITwitterList[] userLists, int membersAddedCount, 
-            string tweetsArchive)
+            string tweetsArchive, IFilteredStream stream)
         {
             _userClient = userclient;
             _userLists = userLists;
             _membersAddedCount = membersAddedCount;
             _tweetsArchive = tweetsArchive;
+            _stream = stream;
         }
         static async Task Main(string[] args)
         {
@@ -78,6 +80,7 @@ namespace BirdMeister
                     "┈UnfavTweets",
                     "┈--------------------Streams",
                     "┈StartFilteredKeyWordsStream",
+                    "┈AddTracksToStream",
                     "┈Exit"
                 };
 
@@ -183,6 +186,14 @@ namespace BirdMeister
                             Console.Clear();
                             // Start filtered stream as parallel
                             Parallel.Invoke(async () => await StartFilteredStream(keyword));
+                            break;
+
+                        case "┈AddTracksToStream":
+                            Console.WriteLine("Please enter the keyword you want to add to the stream...");
+                            var track = Console.ReadLine();
+                            _stream.Stop();
+                            _stream.AddTrack(track);
+                            Parallel.Invoke(async () => await _stream.StartMatchingAllConditionsAsync());
                             break;
 
                         case "-Exit":
@@ -665,10 +676,10 @@ namespace BirdMeister
 
                 // Start Stream
                 var stream = _userClient.Streams.CreateFilteredStream();
+                _stream = stream;
 
                 // Add keyword
                 stream.AddTrack(keyword);
-                stream.AddLanguageFilter("en");
 
                 // Only match the addfollows
                 stream.MatchOn = MatchOn.HashTagEntities;
@@ -677,7 +688,7 @@ namespace BirdMeister
                 stream.StallWarnings = true;
 
                 // Filterlevel of sensitive tweets
-                stream.FilterLevel = StreamFilterLevel.Low;
+                stream.FilterLevel = StreamFilterLevel.None;
 
                 stream.KeepAliveReceived += async (sender, args) =>
                 {
@@ -749,7 +760,7 @@ namespace BirdMeister
                         {
                             Console.WriteLine("Like and retweet tweet ID " + tweet.Id);
 
-                            await _userClient.Tweets.FavoriteTweetAsync(tweet);
+                            //await _userClient.Tweets.FavoriteTweetAsync(tweet);
                             await _userClient.Tweets.PublishRetweetAsync(tweet);
                         }
                     }
@@ -757,6 +768,7 @@ namespace BirdMeister
 
                 };
                 await stream.StartMatchingAllConditionsAsync();
+                
             }
             catch (TwitterException ex)
             {
