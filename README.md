@@ -17,7 +17,7 @@ For the Tweet Database download your Twitter profile archive and drop the includ
 Do not forget to make the json a valid json file. (will automate that later)
 
 # Filtered Stream
-The Tweets will open up in your Standard Browser
+Currently will only retweet tweets with the given keywords - You can add tracks - stop and restart the stream. 
 
 # Screenshots
 <img align="center" width="100" height="100" src="https://github.com/Scobiform/BirdMeister/blob/master/menu.png">
