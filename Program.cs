@@ -80,6 +80,8 @@ namespace BirdMeister
                     "┈UnfavTweets",
                     "┈--------------------Streams",
                     "┈StartFilteredKeyWordsStream",
+                    "┈StopStream",
+                    "┈RestartStream",
                     "┈AddTracksToStream",
                     "┈Exit"
                 };
@@ -188,10 +190,19 @@ namespace BirdMeister
                             Parallel.Invoke(async () => await StartFilteredStream(keyword));
                             break;
 
+                        case "┈StopStream":
+                            _stream.Stop();
+                            break;
+
+                        case "┈RestartStream":
+                            Parallel.Invoke(async () => await _stream.StartMatchingAllConditionsAsync());
+                            break;
+
                         case "┈AddTracksToStream":
+                            _stream.Stop();
                             Console.WriteLine("Please enter the keyword you want to add to the stream...");
                             var track = Console.ReadLine();
-                            _stream.Stop();
+                            
                             _stream.AddTrack(track);
                             Parallel.Invoke(async () => await _stream.StartMatchingAllConditionsAsync());
                             break;
