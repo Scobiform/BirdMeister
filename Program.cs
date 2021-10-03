@@ -756,10 +756,6 @@ namespace BirdMeister
                         {
                             Console.WriteLine($"\n >>> User is protected ");
                         }
-                        else if (hashTagCount > 7)
-                        {
-                            Console.WriteLine($"\n >>> banned for hashtagcount... " + "" + tweet.Id);
-                        }
                         else if (count > 299)
                         {
                             // include running time
