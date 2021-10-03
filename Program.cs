@@ -47,8 +47,6 @@ namespace BirdMeister
             // Create Data Folder
             await CreateDirectory();
 
-            try
-            {
                 // Authenticate Twitter
                 await AuthTwitter();
 
@@ -210,14 +208,9 @@ namespace BirdMeister
                         case "-Exit":
                         default:
                             continue;           
-                    }
                 }
-            }
-            catch (TwitterAuthException ex)
-            {
-                Console.WriteLine("TwitterAuthException was thrown: " + ex);
-            }
         }
+    }
         static string DrawMainMenu(List<string> items)
         {
             for (int i = 0; i < items.Count; i++)
@@ -659,9 +652,12 @@ namespace BirdMeister
         }
         static async Task StartFilteredStream(string keyword)
         {
+            int count = 0;
+
             // Currently it is possible to start 2 streams per user.
             try
             {
+
                 TweetinviEvents.BeforeExecutingRequest += (sender, args) =>
                 {
                     // lets delay all operations from this client by 2 seconds
@@ -692,7 +688,7 @@ namespace BirdMeister
                 // Add keyword
                 stream.AddTrack(keyword);
 
-                // Only match the addfollows
+                // Only match the Hashtags
                 stream.MatchOn = MatchOn.HashTagEntities;
 
                 // Get notfified about shutdown of the stream
@@ -711,14 +707,13 @@ namespace BirdMeister
                 stream.LimitReached += async (sender, eventReceived) =>
                 {
                     Console.WriteLine("===========> Stream Warning... " + eventReceived.NumberOfTweetsNotReceived);
-
                     await Task.Delay(1);
                 };
 
                 stream.WarningFallingBehindDetected += async (sender, args) =>
                 {
                     Console.WriteLine($">_ Warning falling behind...");
-                    await Task.Delay(1000).ConfigureAwait(true);
+                    await Task.Delay(1000);
                 };
 
                 stream.UnmanagedEventReceived += async (sender, args) =>
@@ -731,25 +726,19 @@ namespace BirdMeister
                 {
                     Console.WriteLine($">_ Limit reached...");
                     await Task.Delay(1000).ConfigureAwait(true);
+                    await StopStreamAndRestart();
                 };
 
                 stream.DisconnectMessageReceived += async (sender, args) =>
                 {
                     Console.WriteLine($">_ Stream disconnected...");
-                    stream.Stop();
-                    Task.Delay(20000).Wait();
-                    await stream.StartMatchingAllConditionsAsync().ConfigureAwait(true);
-
+                    await StopStreamAndRestart();
                 };
 
                 stream.NonMatchingTweetReceived += async (sender, args) =>
                 {
-                    var tweet = args.Tweet;
-
-                    Console.WriteLine($"\n >>> Non matching tweet received... " + "" + tweet.Id);
-
-                    await Task.Delay(TimeSpan.FromMinutes(1));
-
+                    //var tweet = args.Tweet;
+                    //Console.WriteLine($"\n >>> Non matching tweet received... " + "" + tweet.Id);
                 };
 
                 stream.MatchingTweetReceived += async (sender, args) =>
@@ -763,16 +752,29 @@ namespace BirdMeister
                         {
                             Console.WriteLine($"\n >>> is retweet... " + "" + tweet.Id);
                         }
-                        else if (hashTagCount > 3)
+                        else if(tweet.CreatedBy.Protected == true)
+                        {
+                            Console.WriteLine($"\n >>> User is protected ");
+                        }
+                        else if (hashTagCount > 7)
                         {
                             Console.WriteLine($"\n >>> banned for hashtagcount... " + "" + tweet.Id);
                         }
-                        else if (tweet.Media.Count >= 1)
+                        else if (count > 299)
                         {
-                            Console.WriteLine("Like and retweet tweet ID " + tweet.Id);
+                            // include running time
+
+                            // Stop stream for 3 hours
+                            await StopStreamAndRestart();
+                        }
+                        else if (tweet.Media.Count >= 1 && tweet != null)
+                        {
+                            Console.WriteLine($"\n >>> Retweet tweet ID: " + tweet.Id);
+                            Console.WriteLine($"\n >>> Retweet count: " + count);
 
                             //await _userClient.Tweets.FavoriteTweetAsync(tweet);
                             await _userClient.Tweets.PublishRetweetAsync(tweet);
+                            count++;
                         }
                     }
                     await Task.Delay(TimeSpan.FromSeconds(60));
@@ -783,7 +785,16 @@ namespace BirdMeister
             }
             catch (TwitterException ex)
             {
-                Console.WriteLine("TwitetrException: " + ex);
+                Console.WriteLine("TwitetrException: " + ex);              
+                await StopStreamAndRestart();
+            }
+            catch(TwitterResponseException ex)
+            {
+                Console.WriteLine("TwitterResponseException: " + ex);
+            }
+            catch (ArgumentException ex)
+            {
+                Console.WriteLine("ArgumentException: " + ex);
             }
             catch (SocketException ex)
             {
@@ -940,6 +951,12 @@ namespace BirdMeister
                     await _userClient.Tweets.DestroyRetweetAsync(tweet.Id);
                 }
             }
+        }
+        static async Task StopStreamAndRestart()
+        {
+            _stream.Stop();
+            await Task.Delay(TimeSpan.FromMinutes(160));
+            await _stream.StartMatchingAllConditionsAsync();
         }
     }
 }
