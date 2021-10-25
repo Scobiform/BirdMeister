@@ -817,23 +817,28 @@ namespace BirdMeister
             }
             else
             {
-                // else get all tweetids and store them in
-
+                // else get all tweetids and store them
                 // Getting all tweets from tweet.js
                 Console.WriteLine(">>> Getting Tweets from tweet.js now");
 
                 _tweetsArchive = File.ReadAllText("Data/tweet.js");
                 var TweetArchive = JsonSerializer.Deserialize<List<Tweets>>(_tweetsArchive);
 
-                using (StreamWriter writer = new("Data/tweetids.txt"))
+                try
                 {
-                    foreach (var tweets in TweetArchive)
+                    using (StreamWriter writer = new("Data/tweetids.txt"))
                     {
-                        Console.WriteLine(">>> Writing " + tweets.Tweet.Id + " to tweetids.txt");
-                        writer.WriteLine(tweets.Tweet.Id);
-                    }
+                        foreach (var tweets in TweetArchive)
+                        {
+                            Console.WriteLine(">>> Writing " + tweets.tweet.id + " to tweetids.txt");
+                            await writer.WriteLineAsync(tweets.tweet.id);
+                        }
+                    }      
                 }
-                await Task.Delay(500);
+                catch(Exception ex)
+                {
+                    Console.WriteLine("Exception thrown: " + ex);
+                }
             }
         }
         static async Task DeleteTweets()

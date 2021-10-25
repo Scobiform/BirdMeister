@@ -7,219 +7,219 @@
 
     public class Tweets
     {
-        public Tweet Tweet { get; set; }
+        public Tweet tweet { get; set; }
     }
 
     public class Tweet
     {
-        public bool Retweeted { get; set; }
-        public string Source { get; set; }
-        public Entities Entities { get; set; }
-        public string[] Display_text_range { get; set; }
-        public string Favorite_count { get; set; }
-        public string Id_str { get; set; }
-        public bool Truncated { get; set; }
-        public string Retweet_count { get; set; }
-        public string Id { get; set; }
-        public bool Possibly_sensitive { get; set; }
-        public string Created_at { get; set; }
-        public bool Favorited { get; set; }
-        public string Full_text { get; set; }
-        public string Lang { get; set; }
-        public string In_reply_to_user_id { get; set; }
-        public string In_reply_to_screen_name { get; set; }
-        public string In_reply_to_user_id_str { get; set; }
-        public string In_reply_to_status_id_str { get; set; }
-        public string In_reply_to_status_id { get; set; }
-        public Extended_Entities Extended_entities { get; set; }
-        public bool Withheld_copyright { get; set; }
-        public string[] Withheld_in_countries { get; set; }
+        public bool retweeted { get; set; }
+        public string source { get; set; }
+        public Entities entities { get; set; }
+        public string[] display_text_range { get; set; }
+        public string favorite_count { get; set; }
+        public string id_str { get; set; }
+        public bool truncated { get; set; }
+        public string retweet_count { get; set; }
+        public string id { get; set; }
+        public bool possibly_sensitive { get; set; }
+        public string created_at { get; set; }
+        public bool favorited { get; set; }
+        public string full_text { get; set; }
+        public string lang { get; set; }
+        public string in_reply_to_user_id { get; set; }
+        public string in_reply_to_screen_name { get; set; }
+        public string in_reply_to_user_id_str { get; set; }
+        public string in_reply_to_status_id_str { get; set; }
+        public string in_reply_to_status_id { get; set; }
+        public Extended_Entities extended_entities { get; set; }
+        public bool withheld_copyright { get; set; }
+        public string[] withheld_in_countries { get; set; }
     }
 
     public class Entities
     {
-        public Hashtag[] Hashtags { get; set; }
-        public Symbol[] Symbols { get; set; }
-        public User_Mentions[] User_mentions { get; set; }
-        public Url[] Urls { get; set; }
-        public Medium[] Media { get; set; }
+        public Hashtag[] hashtags { get; set; }
+        public Symbol[] symbols { get; set; }
+        public User_Mentions[] user_mentions { get; set; }
+        public Url[] urls { get; set; }
+        public Medium[] media { get; set; }
     }
 
     public class Hashtag
     {
-        public string Text { get; set; }
-        public string[] Indices { get; set; }
+        public string text { get; set; }
+        public string[] indices { get; set; }
     }
 
     public class Symbol
     {
-        public string Text { get; set; }
-        public string[] Indices { get; set; }
+        public string text { get; set; }
+        public string[] indices { get; set; }
     }
 
     public class User_Mentions
     {
-        public string Name { get; set; }
-        public string Screen_name { get; set; }
-        public string[] Indices { get; set; }
-        public string Id_str { get; set; }
-        public string Id { get; set; }
+        public string name { get; set; }
+        public string screen_name { get; set; }
+        public string[] indices { get; set; }
+        public string id_str { get; set; }
+        public string id { get; set; }
     }
 
     public class Url
     {
-        public string Urlstring { get; set; }
-        public string Expanded_url { get; set; }
-        public string Display_url { get; set; }
-        public string[] Indices { get; set; }
+        public string urlstring { get; set; }
+        public string expanded_url { get; set; }
+        public string display_url { get; set; }
+        public string[] indices { get; set; }
     }
 
     public class Medium
     {
-        public string Expanded_url { get; set; }
-        public string Source_status_id { get; set; }
-        public string[] Indices { get; set; }
-        public string Url { get; set; }
-        public string Media_url { get; set; }
-        public string Id_str { get; set; }
-        public string Source_user_id { get; set; }
-        public string Id { get; set; }
-        public string Media_url_https { get; set; }
-        public string Source_user_id_str { get; set; }
-        public Sizes Sizes { get; set; }
-        public string Type { get; set; }
-        public string Source_status_id_str { get; set; }
-        public string Display_url { get; set; }
+        public string expanded_url { get; set; }
+        public string source_status_id { get; set; }
+        public string[] indices { get; set; }
+        public string url { get; set; }
+        public string media_url { get; set; }
+        public string id_str { get; set; }
+        public string source_user_id { get; set; }
+        public string id { get; set; }
+        public string media_url_https { get; set; }
+        public string source_user_id_str { get; set; }
+        public Sizes sizes { get; set; }
+        public string type { get; set; }
+        public string source_status_id_str { get; set; }
+        public string display_url { get; set; }
     }
 
     public class Sizes
     {
-        public Large Large { get; set; }
-        public Thumb Thumb { get; set; }
-        public Small Small { get; set; }
-        public Medium1 Medium { get; set; }
+        public Large large { get; set; }
+        public Thumb thumb { get; set; }
+        public Small small { get; set; }
+        public Medium1 medium { get; set; }
     }
 
     public class Large
     {
-        public string W { get; set; }
-        public string H { get; set; }
-        public string Resize { get; set; }
+        public string w { get; set; }
+        public string h { get; set; }
+        public string resize { get; set; }
     }
 
     public class Thumb
     {
-        public string W { get; set; }
-        public string H { get; set; }
-        public string Resize { get; set; }
+        public string w { get; set; }
+        public string h { get; set; }
+        public string resize { get; set; }
     }
 
     public class Small
     {
-        public string W { get; set; }
-        public string H { get; set; }
-        public string Resize { get; set; }
+        public string w { get; set; }
+        public string h { get; set; }
+        public string resize { get; set; }
     }
 
     public class Medium1
     {
-        public string W { get; set; }
-        public string H { get; set; }
-        public string Resize { get; set; }
+        public string w { get; set; }
+        public string h { get; set; }
+        public string resize { get; set; }
     }
 
     public class Extended_Entities
     {
-        public Medium2[] Media { get; set; }
+        public Medium2[] media { get; set; }
     }
 
     public class Medium2
     {
-        public string Expanded_url { get; set; }
-        public string Source_status_id { get; set; }
-        public string[] Indices { get; set; }
-        public string Url { get; set; }
-        public string Media_url { get; set; }
-        public string Id_str { get; set; }
-        public string Source_user_id { get; set; }
-        public string Id { get; set; }
-        public string Media_url_https { get; set; }
-        public string Source_user_id_str { get; set; }
-        public Sizes1 Sizes { get; set; }
-        public string Type { get; set; }
-        public string Source_status_id_str { get; set; }
-        public string Display_url { get; set; }
-        public Video_Info Video_info { get; set; }
-        public Additional_Media_Info Additional_media_info { get; set; }
+        public string expanded_url { get; set; }
+        public string source_status_id { get; set; }
+        public string[] indices { get; set; }
+        public string url { get; set; }
+        public string media_url { get; set; }
+        public string id_str { get; set; }
+        public string source_user_id { get; set; }
+        public string id { get; set; }
+        public string media_url_https { get; set; }
+        public string source_user_id_str { get; set; }
+        public Sizes1 sizes { get; set; }
+        public string type { get; set; }
+        public string source_status_id_str { get; set; }
+        public string display_url { get; set; }
+        public Video_Info video_info { get; set; }
+        public Additional_Media_Info additional_media_info { get; set; }
     }
 
     public class Sizes1
     {
-        public Large1 Large { get; set; }
-        public Thumb1 Thumb { get; set; }
-        public Small1 Small { get; set; }
-        public Medium3 Medium { get; set; }
+        public Large1 large { get; set; }
+        public Thumb1 thumb { get; set; }
+        public Small1 small { get; set; }
+        public Medium3 medium { get; set; }
     }
 
     public class Large1
     {
-        public string W { get; set; }
-        public string H { get; set; }
-        public string Resize { get; set; }
+        public string w { get; set; }
+        public string h { get; set; }
+        public string resize { get; set; }
     }
 
     public class Thumb1
     {
-        public string W { get; set; }
-        public string H { get; set; }
-        public string Resize { get; set; }
+        public string w { get; set; }
+        public string h { get; set; }
+        public string resize { get; set; }
     }
 
     public class Small1
     {
-        public string W { get; set; }
-        public string H { get; set; }
-        public string Resize { get; set; }
+        public string w { get; set; }
+        public string h { get; set; }
+        public string resize { get; set; }
     }
 
     public class Medium3
     {
-        public string W { get; set; }
-        public string H { get; set; }
-        public string Resize { get; set; }
+        public string w { get; set; }
+        public string h { get; set; }
+        public string resize { get; set; }
     }
 
     public class Video_Info
     {
-        public string[] Aspect_ratio { get; set; }
-        public string Duration_millis { get; set; }
-        public Variant[] Variants { get; set; }
+        public string[] aspect_ratio { get; set; }
+        public string duration_millis { get; set; }
+        public Variant[] variants { get; set; }
     }
 
     public class Variant
     {
-        public string Content_type { get; set; }
-        public string Url { get; set; }
-        public string Bitrate { get; set; }
+        public string content_type { get; set; }
+        public string url { get; set; }
+        public string bitrate { get; set; }
     }
 
     public class Additional_Media_Info
     {
-        public bool Monetizable { get; set; }
-        public string Title { get; set; }
-        public string Description { get; set; }
-        public bool Embeddable { get; set; }
-        public Call_To_Actions Call_to_actions { get; set; }
+        public bool monetizable { get; set; }
+        public string title { get; set; }
+        public string description { get; set; }
+        public bool embeddable { get; set; }
+        public Call_To_Actions call_to_actions { get; set; }
     }
 
     public class Call_To_Actions
     {
-        public Visit_Site Visit_site { get; set; }
+        public Visit_Site visit_site { get; set; }
     }
 
     public class Visit_Site
     {
-        public string Url { get; set; }
+        public string url { get; set; }
     }
 
 
