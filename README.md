@@ -14,7 +14,7 @@ Little .NET 5.0 CLI Tool for Twitter to automate deleting Tweets, Lists, User fr
 
 # Tweet Database
 For the Tweet Database download your Twitter profile archive and drop the including tweet.js into the Data folder. 
-Do not forget to make the json a valid json file. (will automate that later)
+Do not forget to make the json a valid json file. Just delete ``window.YTD.tweet.part0 =``
 
 # Filtered Stream
 Currently will only retweet tweets with the given keywords - You can add tracks - stop and restart the stream. 
