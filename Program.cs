@@ -361,12 +361,12 @@ namespace BirdMeister
             // Iterate through listmembers and add pages to list
             var getListMemmbersIterator = _userClient.Lists.GetMembersOfListIterator(new GetMembersOfListParameters(list.Id)
             {
-                PageSize = 100
+                PageSize = 1000
             });
 
             while (!getListMemmbersIterator.Completed)
             {
-                Console.WriteLine(">>> getting next page fropm Iterator");
+                Console.WriteLine(">>> getting next page of members");
                 var page = await getListMemmbersIterator.NextPageAsync();
                 listMembers.AddRange(page);
             }
