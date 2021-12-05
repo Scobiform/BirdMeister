@@ -16,6 +16,7 @@ using Tweetinvi.Models;
 using Tweetinvi.Streaming;
 using Tweetinvi.Streaming.Parameters;
 using System.Reflection;
+using Tweetinvi.Parameters;
 
 namespace BirdMeister
 {
@@ -350,7 +351,25 @@ namespace BirdMeister
         }
         static async Task CopyUsersList(ITwitterList list)
         {
-            var getListMembers = await _userClient.Lists.GetMembersOfListAsync(list.Id);
+            Console.WriteLine(">>> Getting all members of the list");
+            // old code timesout if too many users in the list
+            //var getListMembers = await _userClient.Lists.GetMembersOfListAsync(list.Id);
+
+            // Create List
+            var listMembers = new List<IUser>();
+
+            // Iterate through listmembers and add pages to list
+            var getListMemmbersIterator = _userClient.Lists.GetMembersOfListIterator(new GetMembersOfListParameters(list.Id)
+            {
+                PageSize = 100
+            });
+
+            while (!getListMemmbersIterator.Completed)
+            {
+                Console.WriteLine(">>> getting next page fropm Iterator");
+                var page = await getListMemmbersIterator.NextPageAsync();
+                listMembers.AddRange(page);
+            }
 
             var listName = list.Id;
 
@@ -365,7 +384,7 @@ namespace BirdMeister
 
                     using (StreamWriter writer = new("Data/" + listName.ToString() + ".txt"))
                     {
-                        foreach (var member in getListMembers)
+                        foreach (var member in listMembers)
                         {
                             Console.WriteLine(">>> Writing " + member.Id );
                             writer.WriteLine(member.Id);
