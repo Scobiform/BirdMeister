@@ -29,14 +29,17 @@ namespace BirdMeister
         static string _tweetsArchive;
         static IFilteredStream _stream;
         static IFilteredStream _MakeFrens;
+        static IFilteredStream _BlockAndReportStream;
         public Program(TwitterClient userclient, ITwitterList[] userLists, int membersAddedCount, 
-            string tweetsArchive, IFilteredStream stream)
+            string tweetsArchive, IFilteredStream stream, IFilteredStream makefrens, IFilteredStream blockUserAndReportStream)
         {
             _userClient = userclient;
             _userLists = userLists;
             _membersAddedCount = membersAddedCount;
             _tweetsArchive = tweetsArchive;
             _stream = stream;
+            _MakeFrens = makefrens;
+            _BlockAndReportStream = blockUserAndReportStream;
         }
         static async Task Main(string[] args)
         {
@@ -80,9 +83,11 @@ namespace BirdMeister
                     "┈UnfavTweets",
                     "┈--------------------Streams",
                     "┈StartFilteredKeyWordsStream",
+                    "┈StopStream",
                     "┈StartMakingFrens",
                     "┈StopMakingFrens",
-                    "┈StopStream",
+                    "┈BlockUserAndReportStream",
+                    "┈StopBlockandReportStream",
                     "┈RestartStream",
                     "┈AddTracksToStream",
                     "┈Exit"
@@ -192,21 +197,33 @@ namespace BirdMeister
                             Parallel.Invoke(async () => await StartFilteredStream(keyword));
                             break;
 
-                        case "┈StartMakingFrens":
-                            Console.WriteLine("Please enter the keyword you want to stream...");
-                            var frenword = Console.ReadLine();
-                            Console.Clear();
-                            // Start filtered stream as parallel
-                            Parallel.Invoke(async () => await MakeFren(frenword));
+                        case "┈StopStream":
+                            _stream.Stop();
                             break;
+
+                        case "┈StartMakingFrens":
+                                Console.WriteLine("Please enter the keyword you want to stream...");
+                                var frenword = Console.ReadLine();
+                                Console.Clear();
+                                // Start filtered stream as parallel
+                                Parallel.Invoke(async () => await MakeFren(frenword));
+                                break;
 
                         case "┈StopMakingFrens":
                             _MakeFrens.Stop();
                             break;
 
-                        case "┈StopStream":
-                                    _stream.Stop();
-                                    break;
+                        case "┈BlockUserAndReportStream":
+                            Console.WriteLine("Please enter the keyword you want to stream...");
+                            var spamphrase = Console.ReadLine();
+                            Console.Clear();
+                            // Start filtered stream as parallel
+                            Parallel.Invoke(async () => await BlockUserAndReportStream(spamphrase));
+                            break;
+
+                        case "┈StopBlockAndReportStream":
+                            _BlockAndReportStream.Stop();
+                            break;
 
                         case "┈RestartStream":
                             Parallel.Invoke(async () => await _stream.StartMatchingAllConditionsAsync());
@@ -993,7 +1010,6 @@ namespace BirdMeister
             await Task.Delay(TimeSpan.FromMinutes(160));
             await _stream.StartMatchingAllConditionsAsync();
         }
-
         static async Task MakeFren(string keyword)
         {
             await _userClient.Tweets.PublishTweetAsync("Makin new frens with the frenword #"+ keyword + " on " + DateTime.Now.ToString());
@@ -1123,6 +1139,141 @@ namespace BirdMeister
                     }
                     await Task.Delay(TimeSpan.FromSeconds(60));
 
+                };
+                await stream.StartMatchingAllConditionsAsync();
+
+            }
+            catch (TwitterException ex)
+            {
+                Console.WriteLine("TwitetrException: " + ex);
+                await StopStreamAndRestart();
+            }
+            catch (TwitterResponseException ex)
+            {
+                Console.WriteLine("TwitterResponseException: " + ex);
+            }
+            catch (ArgumentException ex)
+            {
+                Console.WriteLine("ArgumentException: " + ex);
+            }
+            catch (SocketException ex)
+            {
+                Console.WriteLine($"\n>>> Socket Exception... " + ex);
+            }
+            catch (EndOfStreamException ex)
+            {
+                Console.WriteLine($"\n>>> Unexpected end of stream..." + ex);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"<_ " + ex);
+            }
+        }
+        static async Task BlockUserAndReportStream(string keyword)
+        {
+            int count = 0;
+
+            // Currently it is possible to start 2 streams per user.
+            try
+            {
+
+                TweetinviEvents.BeforeExecutingRequest += (sender, args) =>
+                {
+                    // lets delay all operations from this client by 2 seconds
+                    Task.Delay(TimeSpan.FromSeconds(5));
+                };
+
+                // Waiting for rate limits
+                TweetinviEvents.WaitingForRateLimit += (sender, args) =>
+                {
+                    Console.WriteLine($"\n Waiting for rate limits... ");
+                    Task.Delay(TimeSpan.FromHours(3));
+                };
+
+                // subscribe to application level events
+                TweetinviEvents.BeforeExecutingRequest += (sender, args) =>
+                {
+                    // application level logging
+                    Console.WriteLine($"\n >>> Event: " + args.Url + "\n");
+                };
+
+                // For a client to be included in the application events you will need to subscribe to this client's events
+                TweetinviEvents.SubscribeToClientEvents(_userClient);
+
+                // Start Stream
+                var stream = _userClient.Streams.CreateFilteredStream();
+                _BlockAndReportStream = stream;
+
+                // Add keyword
+                stream.AddTrack(keyword);
+
+                // Only match the Hashtags
+                stream.MatchOn = MatchOn.HashTagEntities;
+
+                // Get notfified about shutdown of the stream
+                stream.StallWarnings = true;
+
+                // Filterlevel of sensitive tweets
+                stream.FilterLevel = StreamFilterLevel.None;
+
+                stream.KeepAliveReceived += async (sender, args) =>
+                {
+                    var streamstate = stream.StreamState;
+                    Console.WriteLine(streamstate.ToString());
+                    await Task.Delay(1);
+                };
+
+                stream.LimitReached += async (sender, eventReceived) =>
+                {
+                    Console.WriteLine("===========> Stream Warning... " + eventReceived.NumberOfTweetsNotReceived);
+                    await Task.Delay(1);
+                };
+
+                stream.WarningFallingBehindDetected += async (sender, args) =>
+                {
+                    Console.WriteLine($">_ Warning falling behind...");
+                    await Task.Delay(1000);
+                };
+
+                stream.UnmanagedEventReceived += async (sender, args) =>
+                {
+                    Console.WriteLine($">_ Unmanged Event...");
+                    await Task.Delay(1000).ConfigureAwait(true);
+                };
+
+                stream.LimitReached += async (sender, args) =>
+                {
+                    Console.WriteLine($">_ Limit reached...");
+                    await Task.Delay(1000).ConfigureAwait(true);
+                    await StopStreamAndRestart();
+                };
+
+                stream.DisconnectMessageReceived += async (sender, args) =>
+                {
+                    Console.WriteLine($">_ Stream disconnected...");
+                    await StopStreamAndRestart();
+                };
+
+                stream.NonMatchingTweetReceived += async (sender, args) =>
+                {
+                    //var tweet = args.Tweet;
+                    //Console.WriteLine($"\n >>> Non matching tweet received... " + "" + tweet.Id);
+                };
+
+                stream.MatchingTweetReceived += async (sender, args) =>
+                {
+                    var tweet = args.Tweet;
+
+                    if (args.MatchOn == stream.MatchOn)
+                    {                       
+                            Console.WriteLine($"\n >>> Block and Report User with Id: " + tweet.CreatedBy);
+
+                            //await _userClient.Tweets.FavoriteTweetAsync(tweet);
+                            //await _userClient.Tweets.PublishRetweetAsync(tweet);
+                            await _userClient.Users.BlockUserAsync(tweet.CreatedBy);
+                            await _userClient.Users.ReportUserForSpamAsync(tweet.CreatedBy);
+                            count++;
+                    }
                 };
                 await stream.StartMatchingAllConditionsAsync();
 
