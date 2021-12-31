@@ -1208,7 +1208,7 @@ namespace BirdMeister
                 stream.AddTrack(keyword);
 
                 // Only match the Hashtags
-                stream.MatchOn = MatchOn.HashTagEntities;
+                stream.MatchOn = MatchOn.TweetText;
 
                 // Get notfified about shutdown of the stream
                 stream.StallWarnings = true;
