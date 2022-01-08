@@ -429,7 +429,19 @@ namespace BirdMeister
         {
             var userId = _userClient.Users.GetUserAsync(screenName);
 
-            var friendIds = await _userClient.Users.GetFriendIdsAsync(userId.Result.Id);
+            var firendIdsList = new List<long>();
+
+            var friendIdsIterator = _userClient.Users.GetFriendIdsIterator(new GetFriendsParameters(userId.Result.Id)
+            {
+                PageSize = 1000
+            });
+
+            while (!friendIdsIterator.Completed)
+            {
+                Console.WriteLine($"\n >>> getting next page of friend Ids");
+                var page = await friendIdsIterator.NextPageAsync();
+                firendIdsList.AddRange(page);
+            }
 
             if (File.Exists("Data/" + screenName.ToString() + ".txt"))
             {
@@ -440,7 +452,7 @@ namespace BirdMeister
                 // else get all tweetids and store them in
                 using (StreamWriter writer = new($"Data/"+screenName.ToString() + ".txt"))
                 {
-                    foreach (var member in friendIds)
+                    foreach (var member in firendIdsList)
                     {
                         Thread.Sleep(TimeSpan.FromSeconds(1));
                         Console.WriteLine(">>> Writing " + member);
@@ -931,8 +943,8 @@ namespace BirdMeister
                     File.WriteAllLines("Data/tweetids.txt", orderTweets);
 
                     // Wait for N seconds for rate limits
-                    Console.WriteLine(">>> Waiting for 15 seconds for rate limits");
-                    await Task.Delay(TimeSpan.FromSeconds(15));
+                    Console.WriteLine(">>> Waiting for 5 seconds for rate limits");
+                    await Task.Delay(TimeSpan.FromSeconds(5));
                 }
                 catch(TwitterException ex)
                 {
@@ -954,17 +966,37 @@ namespace BirdMeister
         static async Task UnfavTweets()
         {
             var user = _userClient.Users.GetAuthenticatedUserAsync().Result;
-            var favedTweets = await _userClient.Tweets.GetUserFavoriteTweetsAsync(user.Id);
 
-            foreach(var tweet in favedTweets)
+            try
             {
-                Console.WriteLine("Unfaving Tweet: " + tweet.Id);
-                await _userClient.Tweets.UnfavoriteTweetAsync(tweet);
+                var favedTweetsList = new List<ITweet>();
 
-                await Task.Delay(TimeSpan.FromSeconds(15));
+                var favedTweetsIterator = _userClient.Tweets.GetUserFavoriteTweetsIterator(new GetUserFavoriteTweetsParameters(user.Id)
+                {
+                    PageSize = 500
+                });
+
+                while (!favedTweetsIterator.Completed)
+                {
+                    Console.WriteLine($"\n >>> getting next page of favorited tweets");
+                    var page = await favedTweetsIterator.NextPageAsync();
+                    favedTweetsList.AddRange(page);
+                }
+
+                Console.WriteLine($"\n >>> Successful collected all favorited tweets");
+
+                foreach (var tweet in favedTweetsList)
+                {
+                    Console.WriteLine("Unfaving Tweet: " + tweet.Id);
+                    await _userClient.Tweets.UnfavoriteTweetAsync(tweet);
+
+                    await Task.Delay(TimeSpan.FromSeconds(5));
+                }
             }
-
-            await Task.Delay(100);
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception: " + ex);
+            }
         }
         static async Task UnFollowAll()
         {
@@ -1012,7 +1044,9 @@ namespace BirdMeister
         }
         static async Task MakeFren(string keyword)
         {
-            await _userClient.Tweets.PublishTweetAsync("Makin new frens with the frenword #"+ keyword + " on " + DateTime.Now.ToString());
+            await _userClient.Tweets.PublishTweetAsync("Deep scan for #" + keyword + " lifeforms on " + DateTime.Now.ToString());
+            var user = _userClient.Users.GetAuthenticatedUserAsync().Result;
+            var friends = await _userClient.Users.GetFriendIdsAsync(user);
 
             int count = 0;
 
@@ -1118,21 +1152,22 @@ namespace BirdMeister
                         {
                             Console.WriteLine($"\n >>> User is protected ");
                         }
-                        else if (count > 15)
+                        else if (count > 300)
                         {
-                            // include running time
-
                             // Stop Making Frens
                             _MakeFrens.Stop();
-                            await _userClient.Tweets.PublishTweetAsync("Stopped makin new frens for a bit... " + DateTime.Now.ToString() + " https://pbs.twimg.com/media/FHuCLDBWQAQ0EWs?format=png&name=900x900");
+                        }
+                        else if (friends.Contains(tweet.CreatedBy.Id))
+                        {
+                            Console.WriteLine($"\n >>> User already added " + tweet.CreatedBy.Id);
+                            return;
                         }
                         else if (tweet.Media.Count >= 1 && tweet != null)
                         {
-                            Console.WriteLine($"\n >>> Retweet tweet ID: " + tweet.Id);
-                            Console.WriteLine($"\n >>> Retweet count: " + count);
+                            Console.WriteLine($"\n >>> Tweet ID: " + tweet.Id);
+                            Console.WriteLine($"\n >>> Follow count: " + count);
 
-                            //await _userClient.Tweets.FavoriteTweetAsync(tweet);
-                            //await _userClient.Tweets.PublishRetweetAsync(tweet);
+                            await _userClient.Tweets.PublishTweetAsync("Hello " + tweet.CreatedBy.ScreenName.ToString() + ", the force flows through you. Keep tweeting about #" + keyword + " " + DateTime.Now.ToString());
                             await _userClient.Users.FollowUserAsync(tweet.CreatedBy.Id);
                             count++;
                         }
