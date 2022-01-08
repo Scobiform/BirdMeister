@@ -1019,26 +1019,47 @@ namespace BirdMeister
         }
         static async Task DeleteTimeline()
         {
-            var timeline = await _userClient.Timelines.GetHomeTimelineAsync();
-
-            var user = await _userClient.Users.GetAuthenticatedUserAsync();
-
-            foreach(var tweet in timeline)
+            try
             {
-                if (tweet.CreatedBy.Id == user.Id)
+                var timelineTweetsList = new List<ITweet>();
+
+                var user = await _userClient.Users.GetAuthenticatedUserAsync();
+
+                var timelineIterator = _userClient.Timelines.GetUserTimelineIterator(new GetUserTimelineParameters(user.Id)
                 {
-                    if (!tweet.IsRetweet)
+                    PageSize = 800
+                });
+
+                while (!timelineIterator.Completed)
+                {
+                    Console.WriteLine($"\n >>> getting next page of tweets");
+                    var page = await timelineIterator.NextPageAsync();
+                    timelineTweetsList.AddRange(page);
+                }
+
+                foreach (var tweet in timelineTweetsList)
+                {
+                    if (tweet.CreatedBy.Id == user.Id)
                     {
-                        Console.WriteLine("Deleteing Tweet" + tweet.Id);
-                        await _userClient.Tweets.DestroyTweetAsync(tweet.Id);
-                    }
-                    else
-                    {
-                        Console.WriteLine("Deleteing Retweet" + tweet.Id);
-                        await _userClient.Tweets.DestroyRetweetAsync(tweet.Id);
+                        if (!tweet.IsRetweet)
+                        {
+                            Console.WriteLine("Deleting Tweet " + tweet.Id);
+                            await _userClient.Tweets.DestroyTweetAsync(tweet.Id);
+                        }
+                        else
+                        {
+                            Console.WriteLine("Deleting Retweet" + tweet.Id);
+                            await _userClient.Tweets.DestroyRetweetAsync(tweet.Id);
+                        }
+                        await Task.Delay(TimeSpan.FromSeconds(5));
                     }
                 }
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception: " + ex);
+            }
+
         }
         static async Task StopStreamAndRestart()
         {
