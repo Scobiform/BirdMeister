@@ -1021,18 +1021,22 @@ namespace BirdMeister
         {
             var timeline = await _userClient.Timelines.GetHomeTimelineAsync();
 
+            var user = await _userClient.Users.GetAuthenticatedUserAsync();
+
             foreach(var tweet in timeline)
             {
-
-                if (!tweet.IsRetweet)
+                if (tweet.CreatedBy.Id == user.Id)
                 {
-                    Console.WriteLine("Deleteing Tweet" + tweet.Id);
-                    await _userClient.Tweets.DestroyTweetAsync(tweet.Id);
-                }
-                else
-                {
-                    Console.WriteLine("Deleteing Retweet" + tweet.Id);
-                    await _userClient.Tweets.DestroyRetweetAsync(tweet.Id);
+                    if (!tweet.IsRetweet)
+                    {
+                        Console.WriteLine("Deleteing Tweet" + tweet.Id);
+                        await _userClient.Tweets.DestroyTweetAsync(tweet.Id);
+                    }
+                    else
+                    {
+                        Console.WriteLine("Deleteing Retweet" + tweet.Id);
+                        await _userClient.Tweets.DestroyRetweetAsync(tweet.Id);
+                    }
                 }
             }
         }
