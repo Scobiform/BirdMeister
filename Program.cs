@@ -973,7 +973,7 @@ namespace BirdMeister
 
                 var favedTweetsIterator = _userClient.Tweets.GetUserFavoriteTweetsIterator(new GetUserFavoriteTweetsParameters(user.Id)
                 {
-                    PageSize = 500
+                    PageSize = 2500
                 });
 
                 while (!favedTweetsIterator.Completed)
@@ -990,7 +990,7 @@ namespace BirdMeister
                     Console.WriteLine("Unfaving Tweet: " + tweet.Id);
                     await _userClient.Tweets.UnfavoriteTweetAsync(tweet);
 
-                    await Task.Delay(TimeSpan.FromSeconds(5));
+                    await Task.Delay(TimeSpan.FromSeconds(1));
                 }
             }
             catch (Exception ex)
