@@ -1071,14 +1071,27 @@ namespace BirdMeister
         {
             await _userClient.Tweets.PublishTweetAsync("Deep scan for #" + keyword + " lifeforms on " + DateTime.Now.ToString());
             var user = _userClient.Users.GetAuthenticatedUserAsync().Result;
-            var friends = await _userClient.Users.GetFriendIdsAsync(user);
+
+            // Get current friends
+            var friendsList = new List<long>();
+
+            var friendsIterator = _userClient.Users.GetFriendIdsIterator(new GetFriendIdsParameters(user.Id)
+            {
+                PageSize = 2500
+            });
+
+            while (!friendsIterator.Completed)
+            {
+                Console.WriteLine($"\n >>> getting next page of current friends");
+                var page = await friendsIterator.NextPageAsync();
+                friendsList.AddRange(page);
+            }
 
             int count = 0;
 
             // Currently it is possible to start 2 streams per user.
             try
             {
-
                 TweetinviEvents.BeforeExecutingRequest += (sender, args) =>
                 {
                     // lets delay all operations from this client by 2 seconds
@@ -1165,8 +1178,8 @@ namespace BirdMeister
                 stream.MatchingTweetReceived += async (sender, args) =>
                 {
                     var tweet = args.Tweet;
-                    var hashTagCount = tweet.Entities.Hashtags.Count;
 
+                    // Start matching tweet
                     if (args.MatchOn == stream.MatchOn)
                     {
                         if (tweet.IsRetweet == true)
@@ -1182,7 +1195,7 @@ namespace BirdMeister
                             // Stop Making Frens
                             _MakeFrens.Stop();
                         }
-                        else if (friends.Contains(tweet.CreatedBy.Id))
+                        else if (friendsList.Contains(tweet.CreatedBy.Id))
                         {
                             Console.WriteLine($"\n >>> User already added " + tweet.CreatedBy.Id);
                             return;
@@ -1192,16 +1205,17 @@ namespace BirdMeister
                             Console.WriteLine($"\n >>> Tweet ID: " + tweet.Id);
                             Console.WriteLine($"\n >>> Follow count: " + count);
 
+                            // Publish a notification tweet
                             await _userClient.Tweets.PublishTweetAsync("Hello " + tweet.CreatedBy.ScreenName.ToString() + ", the force flows through you. Keep tweeting about #" + keyword + " " + DateTime.Now.ToString());
+                            // Follow the user
                             await _userClient.Users.FollowUserAsync(tweet.CreatedBy.Id);
+                            // Add User to friendslist
+                            friendsList.Add(tweet.CreatedBy.Id);
                             count++;
                         }
                     }
-                    await Task.Delay(TimeSpan.FromSeconds(60));
-
                 };
                 await stream.StartMatchingAllConditionsAsync();
-
             }
             catch (TwitterException ex)
             {
