@@ -1,5 +1,6 @@
 ﻿namespace BirdMeister.Models
 {
+    // Twitter model
     public class TweetArchive
     {
         public Tweets[] AllTweets { get; set; }
