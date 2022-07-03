@@ -926,11 +926,9 @@ namespace BirdMeister
                     {
                         Console.WriteLine("Tweet is a retweet");
                         // Destroying retweet
-                        /*
                         Console.WriteLine(">>> trying to destroy retweet");
                         await _userClient.Tweets.DestroyRetweetAsync(Convert.ToInt64(tweetid));
                         Console.WriteLine(">>> Success... ");
-                        */      
                     }
                     else
                     {
