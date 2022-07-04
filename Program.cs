@@ -1340,9 +1340,6 @@ namespace BirdMeister
                     if (args.MatchOn == stream.MatchOn)
                     {                       
                             Console.WriteLine($"\n >>> Block and Report User with Id: " + tweet.CreatedBy);
-
-                            //await _userClient.Tweets.FavoriteTweetAsync(tweet);
-                            //await _userClient.Tweets.PublishRetweetAsync(tweet);
                             await _userClient.Users.BlockUserAsync(tweet.CreatedBy);
                             await _userClient.Users.ReportUserForSpamAsync(tweet.CreatedBy);
                             count++;
