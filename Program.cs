@@ -680,7 +680,7 @@ namespace BirdMeister
             {
                 // Make today Database entry
                 Console.WriteLine("Added Members today: " + _membersAddedCount );
-                if (_membersAddedCount >= 150)
+                if (_membersAddedCount >= 350)
                 {
                     Console.WriteLine("You will hit account limits for adding new members soon. Wait for 12 hours. \n#" +
                         "Hit Enter to continue...");
@@ -693,18 +693,20 @@ namespace BirdMeister
                         if (destinationIds.Contains(member) == true)
                         {
                             Console.WriteLine("Id already in list - skipped");
+                            // Deleting MemberId from file on disk
+                            memberIds = File.ReadAllLines(sourceDir + fileName + ".txt").Skip(1).ToArray();
+                            File.WriteAllLines(sourceDir + fileName + ".txt", memberIds);
                         }
                         else
                         {
                             await Task.Delay(TimeSpan.FromSeconds(rand.Next(5, 10)));
                             Console.WriteLine("Adding {0} to the list ", member);
                             await _userClient.Lists.AddMemberToListAsync(Convert.ToInt64(listId), Convert.ToInt64(member));
-
+                            // Deleting MemberId from file on disk
                             memberIds = File.ReadAllLines(sourceDir + fileName + ".txt").Skip(1).ToArray();
                             File.WriteAllLines(sourceDir + fileName + ".txt", memberIds);
-                            
+                            // Members added
                             _membersAddedCount++;
-
                         }
                     }
                     catch (TwitterException ex)
@@ -713,12 +715,9 @@ namespace BirdMeister
 
                         memberIds = File.ReadAllLines(sourceDir + fileName + ".txt").Skip(1).ToArray();
                         File.WriteAllLines(sourceDir + fileName + ".txt", memberIds);
-
-                    }
-                    
+                    }     
                 }
             }
-            await Task.Delay(5000);
         }
         static async Task GetCurrentListMembers(long listId)
         {
