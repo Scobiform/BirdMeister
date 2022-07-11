@@ -647,7 +647,14 @@ namespace BirdMeister
             Console.WriteLine("Please provide the userlist ID to which you want to import the user ids to");
 
             var listId = Console.ReadLine();
+
+            // Path to data folder
             var sourceDir = @"Data\";
+
+            // Get Id´s that are already in the list and save to a file
+            await GetCurrentListMembers(Convert.ToInt64(listId));
+            // Id´s already in destination
+            var destinationIds = File.ReadAllLines(sourceDir + listId + ".txt");
 
             Console.WriteLine("Which Id database do you want to import, \n" +
                 "please type the filename (without .txt) and hit ENTER.\n ");
@@ -673,7 +680,7 @@ namespace BirdMeister
             {
                 // Make today Database entry
                 Console.WriteLine("Added Members today: " + _membersAddedCount );
-                if (_membersAddedCount >= 850)
+                if (_membersAddedCount >= 150)
                 {
                     Console.WriteLine("You will hit account limits for adding new members soon. Wait for 12 hours. \n#" +
                         "Hit Enter to continue...");
@@ -683,12 +690,19 @@ namespace BirdMeister
                 {
                     try
                     {
-                        await Task.Delay(TimeSpan.FromSeconds(rand.Next(5, 10)));
-                        Console.WriteLine("Adding {0} to the list ", member);
-                        await _userClient.Lists.AddMemberToListAsync(Convert.ToInt64(listId), Convert.ToInt64(member));
+                        if (destinationIds.Contains(member) == true)
+                        {
+                            Console.WriteLine("Id already in list - skipped");
+                        }
+                        else
+                        {
+                            await Task.Delay(TimeSpan.FromSeconds(rand.Next(5, 10)));
+                            Console.WriteLine("Adding {0} to the list ", member);
+                            await _userClient.Lists.AddMemberToListAsync(Convert.ToInt64(listId), Convert.ToInt64(member));
 
-                        memberIds = File.ReadAllLines(sourceDir + fileName + ".txt").Skip(1).ToArray();
-                        File.WriteAllLines(sourceDir + fileName + ".txt", memberIds);
+                            memberIds = File.ReadAllLines(sourceDir + fileName + ".txt").Skip(1).ToArray();
+                            File.WriteAllLines(sourceDir + fileName + ".txt", memberIds);
+                        }
                     }
                     catch (TwitterException ex)
                     {
@@ -702,6 +716,50 @@ namespace BirdMeister
                 }
             }
             await Task.Delay(5000);
+        }
+        static async Task GetCurrentListMembers(long listId)
+        {
+            Console.WriteLine(">>> Getting all members of the list");
+            // old code timesout if too many users in the list
+            //var getListMembers = await _userClient.Lists.GetMembersOfListAsync(list.Id);
+
+            // Create List
+            var listMembers = new List<IUser>();
+
+            // Iterate through listmembers and add pages to list
+            var getListMemmbersIterator = _userClient.Lists.GetMembersOfListIterator(new GetMembersOfListParameters(listId)
+            {
+                PageSize = 500
+            });
+
+            while (!getListMemmbersIterator.Completed)
+            {
+                Console.WriteLine(">>> getting next page of members");
+                var page = await getListMemmbersIterator.NextPageAsync();
+                listMembers.AddRange(page);
+            }
+
+            var listName = listId;
+
+            // Check if tweetids.txt is already existing
+            if (File.Exists("Data/" + listName.ToString() + ".txt"))
+            {
+                Console.WriteLine(">>> Skipping database creation because file already exists");
+            }
+            else
+            {
+                // else gett all tweetids and store them in
+
+                using (StreamWriter writer = new("Data/" + listName.ToString() + ".txt"))
+                {
+                    foreach (var member in listMembers)
+                    {
+                        Console.WriteLine(">>> Writing " + member.Id);
+                        writer.WriteLine(member.Id);
+                    }
+                }
+                await Task.Delay(500);
+            }
         }
         static async Task DeleteIdFromList(string Id)
         {
