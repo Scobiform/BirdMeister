@@ -680,7 +680,7 @@ namespace BirdMeister
             {
                 // Make today Database entry
                 Console.WriteLine("Added Members today: " + _membersAddedCount );
-                if (_membersAddedCount >= 850)
+                if (_membersAddedCount >= 150)
                 {
                     Console.WriteLine("You will hit account limits for adding new members soon. Wait for 12 hours. \n#" +
                         "Hit Enter to continue...");
@@ -702,6 +702,9 @@ namespace BirdMeister
 
                             memberIds = File.ReadAllLines(sourceDir + fileName + ".txt").Skip(1).ToArray();
                             File.WriteAllLines(sourceDir + fileName + ".txt", memberIds);
+                            
+                            _membersAddedCount++;
+
                         }
                     }
                     catch (TwitterException ex)
@@ -712,7 +715,7 @@ namespace BirdMeister
                         File.WriteAllLines(sourceDir + fileName + ".txt", memberIds);
 
                     }
-                    _membersAddedCount++;
+                    
                 }
             }
             await Task.Delay(5000);
