@@ -680,7 +680,7 @@ namespace BirdMeister
             {
                 // Make today Database entry
                 Console.WriteLine("Added Members today: " + _membersAddedCount );
-                if (_membersAddedCount >= 150)
+                if (_membersAddedCount >= 850)
                 {
                     Console.WriteLine("You will hit account limits for adding new members soon. Wait for 12 hours. \n#" +
                         "Hit Enter to continue...");
