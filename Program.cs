@@ -722,26 +722,6 @@ namespace BirdMeister
         }
         static async Task GetCurrentListMembers(long listId)
         {
-            Console.WriteLine(">>> Getting all members of the list");
-            // old code timesout if too many users in the list
-            //var getListMembers = await _userClient.Lists.GetMembersOfListAsync(list.Id);
-
-            // Create List
-            var listMembers = new List<IUser>();
-
-            // Iterate through listmembers and add pages to list
-            var getListMemmbersIterator = _userClient.Lists.GetMembersOfListIterator(new GetMembersOfListParameters(listId)
-            {
-                PageSize = 500
-            });
-
-            while (!getListMemmbersIterator.Completed)
-            {
-                Console.WriteLine(">>> getting next page of members");
-                var page = await getListMemmbersIterator.NextPageAsync();
-                listMembers.AddRange(page);
-            }
-
             var listName = listId;
 
             // Check if tweetids.txt is already existing
@@ -751,6 +731,26 @@ namespace BirdMeister
             }
             else
             {
+                Console.WriteLine(">>> Getting all members of the list");
+                // old code timesout if too many users in the list
+                //var getListMembers = await _userClient.Lists.GetMembersOfListAsync(list.Id);
+
+                // Create List
+                var listMembers = new List<IUser>();
+
+                // Iterate through listmembers and add pages to list
+                var getListMemmbersIterator = _userClient.Lists.GetMembersOfListIterator(new GetMembersOfListParameters(listId)
+                {
+                    PageSize = 500
+                });
+
+                while (!getListMemmbersIterator.Completed)
+                {
+                    Console.WriteLine(">>> getting next page of members");
+                    var page = await getListMemmbersIterator.NextPageAsync();
+                    listMembers.AddRange(page);
+                }
+
                 // else gett all tweetids and store them in
 
                 using (StreamWriter writer = new("Data/" + listName.ToString() + ".txt"))
