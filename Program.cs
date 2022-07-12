@@ -750,8 +750,7 @@ namespace BirdMeister
                     listMembers.AddRange(page);
                 }
 
-                // else gett all tweetids and store them in
-
+                // else gett all tweetids and store them in file on disk
                 using (StreamWriter writer = new("Data/" + listName.ToString() + ".txt"))
                 {
                     foreach (var member in listMembers)
