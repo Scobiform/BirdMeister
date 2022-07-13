@@ -712,9 +712,6 @@ namespace BirdMeister
                     catch (TwitterException ex)
                     {
                         Console.WriteLine("TwitterException: " + ex);
-
-                        memberIds = File.ReadAllLines(sourceDir + fileName + ".txt").Skip(1).ToArray();
-                        File.WriteAllLines(sourceDir + fileName + ".txt", memberIds);
                     }     
                 }
             }
